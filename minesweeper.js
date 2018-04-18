@@ -7,8 +7,13 @@
         num: 10,
         squareWidth: 16,
         squareHeight: 16,
-        map: [],
+        map: [], // 1mine
         openMap: [], //1close、0opened、2flag
+        numberMap: [],
+        squareOpen: 0,
+        squareClose: 1,
+        squareMine: 1,
+        squareFlag: 2,
         game: true,
         gameStart: true,
         startTime: 0,
@@ -80,18 +85,15 @@
         remainMineArea.innerText = '剩余地雷数:' + mine.num;
         remainMineCount = mine.num;
 
-        // 盤面を全て0に初始化
+        // 初始化
         for (var i = 0; i < mine.width; i++) {
             mine.map[i] = [];
+            mine.openMap[i] = [];
+            mine.numberMap[i] = [];
             for (var j = 0; j < mine.height; j++) {
                 mine.map[i][j] = 0;
-            }
-        }
-        // 開いているマスを示すopenMapを1に初始化
-        for (var i = 0; i < mine.width; i++) {
-            mine.openMap[i] = [];
-            for (var j = 0; j < mine.height; j++) {
                 mine.openMap[i][j] = 1;
+                mine.numberMap[i][j] = '?';
             }
         }
 
@@ -115,8 +117,11 @@
                 var img = document.createElement('img');
                 if (mine.map[i][j] === 1) {
                     img.src = 'mine.png';
+                    mine.numberMap[i][j] = 'mine';
                 } else {
-                    img.src = surroundMineNum(i, j) + '.png';
+                    var square_number = surroundMineNum(i, j);
+                    img.src = square_number + '.png';
+                    mine.numberMap[i][j] = square_number;
                 }
                 img.id = i + '-' + j + '-back';
                 img.style.position = 'absolute';
@@ -138,6 +143,17 @@
                 displayArea.appendChild(img);
             }
         }
+
+        // first click
+        loop1:
+            for (var i = 0; i < mine.width; i++) {
+                for (var j = 0; j < mine.height; j++) {
+                    if (mine.numberMap[i][j] === 0) {
+                        leftClickAction(i, j);
+                        break loop1;
+                    }
+                }
+            }
     }
 
     document.getElementById('restart').onclick = init;
