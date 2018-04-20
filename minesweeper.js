@@ -1,4 +1,3 @@
-;'use strict';
 var mine = {
     width: 9,
     height: 9,
@@ -7,6 +6,7 @@ var mine = {
     squareHeight: 16,
     map: [], // 1mine
     openMap: [], //0opened、1close、2flag
+    openNumberMap: [],
     numberMap: [],
     squareOpen: 0,
     squareClose: 1,
@@ -47,18 +47,6 @@ function init(difficulty) {
     clearInterval(autoClickTimer);
     autoClickTimerFlag = true;
 
-    // 盤面削除
-    for (var i = 0; i < mine.width; i++) {
-        for (var j = 0; j < mine.height; j++) {
-            if (document.getElementById(i + '-' + j)) {
-                document.getElementById(i + '-' + j).parentNode.removeChild(document.getElementById(i + '-' + j));
-            }
-            if (document.getElementById(i + '-' + j + '-back')) {
-                document.getElementById(i + '-' + j + '-back').parentNode.removeChild(document.getElementById(i + '-' + j + '-back'));
-            }
-        }
-    }
-
     if (difficulty === 0) {
         mine.width = 9;
         mine.height = 9;
@@ -87,11 +75,21 @@ function init(difficulty) {
     for (var i = 0; i < mine.width; i++) {
         mine.map[i] = [];
         mine.openMap[i] = [];
+        mine.openNumberMap[i] = [];
         mine.numberMap[i] = [];
         for (var j = 0; j < mine.height; j++) {
             mine.map[i][j] = 0;
             mine.openMap[i][j] = mine.squareClose;
+            mine.openNumberMap[i][j] = '?';
             mine.numberMap[i][j] = '?';
+
+            // 盤面削除
+            if (document.getElementById(i + '-' + j)) {
+                document.getElementById(i + '-' + j).parentNode.removeChild(document.getElementById(i + '-' + j));
+            }
+            if (document.getElementById(i + '-' + j + '-back')) {
+                document.getElementById(i + '-' + j + '-back').parentNode.removeChild(document.getElementById(i + '-' + j + '-back'));
+            }
         }
     }
 
@@ -109,10 +107,15 @@ function init(difficulty) {
             }
         }
     }
-    // 盤面裏的画像的表示
+
+    // for bug review
+    // mine.map = [[0, 0, 0, 0, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 1, 0, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1, 0]];
+
+    var img = '';
     for (var i = 0; i < mine.width; i++) {
         for (var j = 0; j < mine.height; j++) {
-            var img = document.createElement('img');
+            // 盤面裏的画像的表示
+            img = document.createElement('img');
             if (mine.map[i][j] === mine.squareMine) {
                 img.src = 'mine.png';
                 mine.numberMap[i][j] = 'mine';
@@ -126,13 +129,9 @@ function init(difficulty) {
             img.style.left = mine.marginLeft + mine.squareWidth * i + 'px';
             img.style.top = mine.marginTop + mine.squareHeight * j + 'px';
             displayArea.appendChild(img);
-        }
-    }
 
-    // 盤面的画像的表示
-    for (var i = 0; i < mine.width; i++) {
-        for (var j = 0; j < mine.height; j++) {
-            var img = document.createElement('img');
+            // 盤面的画像的表示
+            img = document.createElement('img');
             img.src = 'square.png';
             img.id = i + '-' + j;
             img.style.position = 'absolute';
@@ -211,8 +210,6 @@ function clickDecision(x, y) {
         leftClickAction(x, y);
     } else if (buttonNum === 2) {
         rightClickAction(x, y);
-    } else if (buttonNum === 3) {
-        leftAndRightClickAction(x, y);
     }
 }
 
@@ -230,6 +227,10 @@ function leftClickAction(x, y) {
         }
 
         if (mine.openMap[x][y] === mine.squareClose) {
+            if (mine.numberMap[x][y] === 'mine') {
+                console.log('leftClickAction click mine:', x, y);
+            }
+
             squareOpen(x, y);
         }
     }
@@ -252,38 +253,6 @@ function rightClickAction(x, y) {
             remainMineCount++;
         }
         remainMineArea.innerText = 'mine quantity:' + remainMineCount;
-    }
-}
-
-/**
- * 左右同時按键
- * @param x
- * @param y
- */
-function leftAndRightClickAction(x, y) {
-    if (mine.game) {
-        var count = 0;
-        for (var i = -1; i < 2; i++) {
-            for (var j = -1; j < 2; j++) {
-                if (0 <= x + i && x + i < mine.width && 0 <= y + j && y + j < mine.height) {
-                    if (mine.openMap[x + i][y + j] === mine.squareFlag) {
-                        count++;
-                    }
-                }
-            }
-        }
-
-        if (count === surroundMineNum(x, y)) {
-            for (var i = -1; i < 2; i++) {
-                for (var j = -1; j < 2; j++) {
-                    if (0 <= x + i && x + i < mine.width && 0 <= y + j && y + j < mine.height) {
-                        if (mine.openMap[x + i][y + j] === mine.squareClose) {
-                            squareOpen(x + i, y + j);
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -315,11 +284,16 @@ function squareOpen(x, y) {
     } else if (surroundMineNum(x, y)) {
         // open number
         mine.openMap[x][y] = mine.squareOpen;
+        mine.openNumberMap[x][y] = squareNum(x, y);
         document.getElementById(x + '-' + y).parentNode.removeChild(document.getElementById(x + '-' + y));
     } else {
         zeroSquareOpen(x, y);
     }
 
+    setWin();
+}
+
+function setWin() {
     var clearFlag = true;
     for (var i = 0; i < mine.width; i++) {
         for (var j = 0; j < mine.height; j++) {
@@ -328,6 +302,7 @@ function squareOpen(x, y) {
             }
         }
     }
+
     if (clearFlag) {
         resultArea.innerText = 'YOU WIN！';
         mine.endTime = new Date().getTime();
@@ -336,6 +311,9 @@ function squareOpen(x, y) {
         mine.game = false;
         clearInterval(timer);
         clearInterval(autoClickTimer);
+
+        console.log('YOU WIN！');
+        document.getElementById('restart').click();
     }
 }
 
@@ -345,16 +323,54 @@ function squareOpen(x, y) {
  * @param y
  * @returns {number}
  */
-function surroundMineNum(x, y) {
+function squareNum(x, y) {
+    var fileName = document.getElementById(x + '-' + y + '-back').src;
+    var num = parseInt(fileName.replace(window.location.href, '').replace('.png', ''));
+    if (!Number(num)) {
+        num = 0;
+    }
+
+    return num;
+}
+
+/**
+ *
+ * @returns {number}
+ */
+function squareCloseNum() {
     var count = 0;
-    for (var i = -1; i < 2; i++) {
-        for (var j = -1; j < 2; j++) {
-            if (0 <= x + i && x + i < mine.width && 0 <= y + j && y + j < mine.height) {
-                count += mine.map[x + i][y + j];
+    for (var x = 0; x < mine.width; x++) {
+        for (var y = 0; y < mine.height; y++) {
+            if (mine.openMap[x][y] === mine.squareClose) {
+                count++;
             }
         }
     }
+
     return count;
+}
+
+/**
+ *
+ * @returns {{}|bool}
+ */
+function squareLastXY() {
+    var lastXY = {};
+    var count = 0;
+    for (var x = 0; x < mine.width; x++) {
+        for (var y = 0; y < mine.height; y++) {
+            if (mine.openMap[x][y] === mine.squareClose) {
+                lastXY = {x: x, y: y};
+                count++;
+            }
+        }
+    }
+
+    if (!Object.keys(lastXY).length || count != 1) {
+        lastXY = false;
+    }
+
+    return lastXY;
 }
 
 /**
@@ -368,6 +384,7 @@ function zeroSquareOpen(x, y) {
             if (0 <= x + i && x + i < mine.width && 0 <= y + j && y + j < mine.height) {
                 if (mine.openMap[x + i][y + j] === mine.squareClose) {
                     mine.openMap[x + i][y + j] = mine.squareOpen;
+                    mine.openNumberMap[x + i][y + j] = squareNum(x + i, y + j);
                     document.getElementById((x + i) + '-' + (y + j)).parentNode.removeChild(document.getElementById((x + i) + '-' + (y + j)));
                     if (surroundMineNum(x + i, y + j) === 0) {
                         zeroSquareOpen(x + i, y + j);
@@ -419,6 +436,11 @@ function autoClick() {
                 }
             }
             leftClickAction(left, top);
+        } else if (squareCloseNum() === 1 && remainMineCount === 0) {
+            var lastXY = squareLastXY();
+            if (lastXY) {
+                leftClickAction(lastXY['x'], lastXY['y']);
+            }
         } else if (autoClickFlag) {
             while (1) {
                 if (autoClickX === mine.width) {
@@ -474,18 +496,29 @@ function autoClick() {
                         autoArea.innerText = 'AI fail！';
                         autoClickTimerFlag = true;
                         autoClickNowFlag = false;
+
+                        console.log('AI fail！');
+                        // document.getElementById('restart').click();
                     }
                     noOpenFlag = true;
                     return;
                 }
 
-                if (mine.openMap[autoClickX][autoClickY] === 0 && surroundMineNum(autoClickX, autoClickY) !== 0 && surroundMineNum(autoClickX, autoClickY) === surroundFlagNum(autoClickX, autoClickY) && surroundMineNum(autoClickX, autoClickY) !== surroundSquareNum(autoClickX, autoClickY)) {
+                if (mine.openMap[autoClickX][autoClickY] === mine.squareOpen
+                    && surroundMineNum(autoClickX, autoClickY) !== mine.squareOpen
+                    && surroundMineNum(autoClickX, autoClickY) === surroundFlagNum(autoClickX, autoClickY)
+                    && surroundMineNum(autoClickX, autoClickY) !== surroundSquareNum(autoClickX, autoClickY)) {
                     noOpenFlag = false;
                     break;
                 }
                 autoClickX++;
             }
-            leftAndRightClickAction(autoClickX, autoClickY);
+
+            var xyArray = surroundCloseSquareXY(autoClickX, autoClickY);
+            for (var i = 0; i < xyArray.length; i++) {
+                leftClickAction(xyArray[i]['x'], xyArray[i]['y']);
+            }
+
             autoClickX++;
         }
     }
@@ -515,6 +548,26 @@ function surroundSquareNum(x, y) {
  *
  * @param x
  * @param y
+ * @returns Array
+ */
+function surroundCloseSquareXY(x, y) {
+    var xyArray = [];
+    for (var i = -1; i < 2; i++) {
+        for (var j = -1; j < 2; j++) {
+            if (0 <= x + i && x + i < mine.width && 0 <= y + j && y + j < mine.height) {
+                if (mine.openMap[x + i][y + j] === mine.squareClose) {
+                    xyArray.push({x: x + i, y: y + j});
+                }
+            }
+        }
+    }
+    return xyArray;
+}
+
+/**
+ *
+ * @param x
+ * @param y
  * @returns {number}
  */
 function surroundFlagNum(x, y) {
@@ -525,6 +578,24 @@ function surroundFlagNum(x, y) {
                 if (mine.openMap[x + i][y + j] === mine.squareFlag) {
                     count++;
                 }
+            }
+        }
+    }
+    return count;
+}
+
+/**
+ *
+ * @param x
+ * @param y
+ * @returns {number}
+ */
+function surroundMineNum(x, y) {
+    var count = 0;
+    for (var i = -1; i < 2; i++) {
+        for (var j = -1; j < 2; j++) {
+            if (0 <= x + i && x + i < mine.width && 0 <= y + j && y + j < mine.height) {
+                count += mine.map[x + i][y + j];
             }
         }
     }
