@@ -284,7 +284,7 @@ function squareOpen(x, y) {
     } else if (surroundMineNum(x, y)) {
         // open number
         mine.openMap[x][y] = mine.squareOpen;
-        mine.openNumberMap[x][y] = squareNum(x, y);
+        mine.openNumberMap[x][y] = squareImgNum(x, y);
         document.getElementById(x + '-' + y).parentNode.removeChild(document.getElementById(x + '-' + y));
     } else {
         zeroSquareOpen(x, y);
@@ -323,7 +323,7 @@ function setWin() {
  * @param y
  * @returns {number}
  */
-function squareNum(x, y) {
+function squareImgNum(x, y) {
     var fileName = document.getElementById(x + '-' + y + '-back').src;
     var num = parseInt(fileName.replace(window.location.href, '').replace('.png', ''));
     if (!Number(num)) {
@@ -348,6 +348,78 @@ function squareCloseNum() {
     }
 
     return count;
+}
+
+/**
+ *
+ * @returns {Array}
+ */
+function squareCloseXY() {
+    var closeXY = [];
+    for (var x = 0; x < mine.width; x++) {
+        for (var y = 0; y < mine.height; y++) {
+            if (mine.openMap[x][y] === mine.squareClose) {
+                closeXY.push({x: x, y: y});
+            }
+        }
+    }
+
+    return closeXY;
+}
+
+/**
+ *
+ * @returns {Array}
+ */
+function squareMaybeMineXY() {
+    var maybeMineXY = [];
+    for (var x = 0; x < mine.width; x++) {
+        for (var y = 0; y < mine.height; y++) {
+            if (mine.openMap[x][y] === mine.squareOpen && surroundFlagNum(x, y) !== squareImgNum(x, y)) {
+                maybeMineXY = $.merge(maybeMineXY, surroundCloseSquareXY(x, y));
+            }
+        }
+    }
+
+    maybeMineXY = filterUniqueXY(maybeMineXY);
+
+    // deep filter
+    var noMineXY = [];
+    $.each(maybeMineXY, function (key, val) {
+        var surroundImgNumArray = surroundSquareImgNum(val['x'], val['y']);
+        $.each(surroundImgNumArray, function (key2, val2) {
+            var surroundCloseSquareXYArray = surroundCloseSquareXY(val2['x'], val2['y']);
+            if (remainMineCount === val2['num']) {
+                var diffArray = filterDifferenceXY(maybeMineXY, surroundCloseSquareXYArray);
+                if (diffArray.length) {
+                    $.each(diffArray, function (key4, val4) {
+                        noMineXY.push({x: val4['x'], y: val4['y']});
+                    });
+                }
+            }
+        });
+    });
+
+    noMineXY = filterUniqueXY(noMineXY);
+    maybeMineXY = filterDifferenceXY(maybeMineXY, noMineXY);
+
+    return maybeMineXY;
+}
+
+/**
+ *
+ * @returns {Array}
+ */
+function squareNoMineXY() {
+    var maybeMineXY = squareMaybeMineXY();
+    var squareXY = squareCloseXY();
+    var noMineXY = [];
+
+    if (!maybeMineXY.length || !squareXY.length) {
+        return noMineXY;
+    }
+
+    return filterDifferenceXY(maybeMineXY, squareXY);
 }
 
 /**
@@ -384,7 +456,7 @@ function zeroSquareOpen(x, y) {
             if (0 <= x + i && x + i < mine.width && 0 <= y + j && y + j < mine.height) {
                 if (mine.openMap[x + i][y + j] === mine.squareClose) {
                     mine.openMap[x + i][y + j] = mine.squareOpen;
-                    mine.openNumberMap[x + i][y + j] = squareNum(x + i, y + j);
+                    mine.openNumberMap[x + i][y + j] = squareImgNum(x + i, y + j);
                     document.getElementById((x + i) + '-' + (y + j)).parentNode.removeChild(document.getElementById((x + i) + '-' + (y + j)));
                     if (surroundMineNum(x + i, y + j) === 0) {
                         zeroSquareOpen(x + i, y + j);
@@ -441,6 +513,11 @@ function autoClick() {
             if (lastXY) {
                 leftClickAction(lastXY['x'], lastXY['y']);
             }
+        // } else if (squareNoMineXY() && squareCloseNum() > remainMineCount && remainMineCount === 1) {
+        //     var noMineXY = squareNoMineXY();
+        //     for (var i = 0; i < noMineXY.length; i++) {
+        //         leftClickAction(noMineXY[i]['x'], noMineXY[i]['y']);
+        //     }
         } else if (autoClickFlag) {
             while (1) {
                 if (autoClickX === mine.width) {
@@ -508,20 +585,58 @@ function autoClick() {
                     && surroundMineNum(autoClickX, autoClickY) !== mine.squareOpen
                     && surroundMineNum(autoClickX, autoClickY) === surroundFlagNum(autoClickX, autoClickY)
                     && surroundMineNum(autoClickX, autoClickY) !== surroundSquareNum(autoClickX, autoClickY)) {
+                    var xyArray = surroundCloseSquareXY(autoClickX, autoClickY);
+                    for (var i = 0; i < xyArray.length; i++) {
+                        leftClickAction(xyArray[i]['x'], xyArray[i]['y']);
+                    }
+
+                    autoClickX++;
+
                     noOpenFlag = false;
                     break;
                 }
+
+                var maybeMineXY = [];
+                $.each(squareMaybeMineXY(), function (key, val) {
+                    maybeMineXY.push(JSON.stringify(val));
+                });
+                var currentXY = JSON.stringify({x:autoClickX , y: autoClickY});
+                if (remainMineCount === 1 && mine.openMap[autoClickX][autoClickY] === mine.squareClose && !maybeMineXY.includes(currentXY)) {
+                    leftClickAction(autoClickX, autoClickY);
+
+                    autoClickX++;
+
+                    noOpenFlag = false;
+                    break;
+                }
+
                 autoClickX++;
             }
-
-            var xyArray = surroundCloseSquareXY(autoClickX, autoClickY);
-            for (var i = 0; i < xyArray.length; i++) {
-                leftClickAction(xyArray[i]['x'], xyArray[i]['y']);
-            }
-
-            autoClickX++;
         }
     }
+}
+
+/**
+ *
+ * @param x
+ * @param y
+ * @returns {Array}
+ */
+function surroundSquare(x, y) {
+    var xyArray = [];
+    for (var i = -1; i < 2; i++) {
+        for (var j = -1; j < 2; j++) {
+            if (!(x === x + i && y === y + j) && 0 <= x + i && x + i < mine.width && 0 <= y + j && y + j < mine.height) {
+                xyArray.push({
+                    x: x + i,
+                    y: y + j,
+                    num: squareImgNum(x + i, y + j)
+                });
+            }
+        }
+    }
+
+    return xyArray;
 }
 
 /**
@@ -542,6 +657,29 @@ function surroundSquareNum(x, y) {
         }
     }
     return count;
+}
+
+/**
+ *
+ * @param x
+ * @param y
+ * @returns {Array}
+ */
+function surroundSquareImgNum(x, y) {
+    var xyArray = [];
+    for (var i = -1; i < 2; i++) {
+        for (var j = -1; j < 2; j++) {
+            if (!(x === x + i && y === y + j) && 0 <= x + i && x + i < mine.width && 0 <= y + j && y + j < mine.height && mine.openMap[x + i][y + j] === mine.squareOpen) {
+                xyArray.push({
+                    x: x + i,
+                    y: y + j,
+                    num: squareImgNum(x + i, y + j)
+                });
+            }
+        }
+    }
+
+    return xyArray;
 }
 
 /**
@@ -600,6 +738,79 @@ function surroundMineNum(x, y) {
         }
     }
     return count;
+}
+
+/**
+ *
+ * @param oldArray
+ * @returns {Array}
+ */
+function filterUniqueXY(oldArray) {
+    var tempArray = [];
+    $.each(oldArray, function (key, val) {
+        tempArray.push(`${val.x},${val.y}`);
+    });
+
+    tempArray = $.unique(tempArray);
+    var newArray = [];
+    $.each(tempArray, function (key, val) {
+        val = val.split(',');
+        newArray.push({x: parseInt(val[0]), y: parseInt(val[1])});
+    });
+
+    return newArray;
+}
+
+/**
+ *
+ * @param a
+ * @param b
+ * @returns {Array}
+ */
+function filterIntersectXY(a, b) {
+    var tempA = [];
+    $.each(a, function (key, val) {
+        tempA.push(JSON.stringify(val));
+    });
+
+    var tempB = [];
+    $.each(b, function (key, val) {
+        tempB.push(JSON.stringify(val));
+    });
+
+    var c = tempA.filter(v => tempB.includes(v));
+    var tempC = [];
+    $.each(c, function (key, val) {
+        tempC.push(JSON.parse(val));
+    });
+
+    return tempC;
+}
+
+/**
+ *
+ * @param a
+ * @param b
+ * @returns {Array}
+ */
+function filterDifferenceXY(a, b) {
+    var tempA = [];
+    $.each(a, function (key, val) {
+        tempA.push(JSON.stringify(val));
+    });
+
+    var tempB = [];
+    $.each(b, function (key, val) {
+        tempB.push(JSON.stringify(val));
+    });
+
+    var c = tempA.concat(tempB).filter(v => !tempA.includes(v) || !tempB.includes(v));
+    var tempC = [];
+    $.each(c, function (key, val) {
+        tempC.push(JSON.parse(val));
+    });
+
+    return tempC;
 }
 
 init(document.getElementById('difficulty').selectedIndex);
