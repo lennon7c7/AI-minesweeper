@@ -45,6 +45,7 @@ function init(difficulty) {
     // scoreArea.innerText = 'time:' + 0;
     autoArea.innerText = '';
     clearInterval(autoClickTimer);
+    $(displayArea).empty();
     autoClickTimerFlag = true;
 
     if (difficulty === 0) {
@@ -82,14 +83,6 @@ function init(difficulty) {
             mine.openMap[i][j] = mine.squareClose;
             mine.openNumberMap[i][j] = '?';
             mine.numberMap[i][j] = '?';
-
-            // 盤面削除
-            if (document.getElementById(i + '-' + j)) {
-                document.getElementById(i + '-' + j).parentNode.removeChild(document.getElementById(i + '-' + j));
-            }
-            if (document.getElementById(i + '-' + j + '-back')) {
-                document.getElementById(i + '-' + j + '-back').parentNode.removeChild(document.getElementById(i + '-' + j + '-back'));
-            }
         }
     }
 
@@ -109,7 +102,12 @@ function init(difficulty) {
     }
 
     // for bug review
-    // mine.map = [[0, 0, 0, 0, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 1, 0, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1, 0]];
+    // mine.map = [[0, 0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 1, 0, 0], [0, 0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 1, 0, 0], [0, 0, 1, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 1, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1, 1], [0, 1, 0, 0, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0]];
+    // mine.map = [[0, 0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0],[0, 0, 0, 0, 0, 0, 0, 0, 0],[0, 0, 0, 1, 0, 0, 0, 0, 0], [1, 0, 1, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 1, 1, 0, 0, 0],[0, 0, 0, 0, 0, 0, 0, 0, 0],[1, 0, 1, 0, 0, 1, 0, 0, 0]];
+    // mine.map = [[0, 1, 0, 0, 0, 0, 0, 0, 0],[0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 1, 0, 0, 0, 0, 0, 1], [1, 1, 0, 0, 1, 0, 1, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0]];
+    // mine.map = [[0, 0, 0, 0, 0, 1, 0, 1, 0],[0, 0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 1, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0],[0, 0, 1, 0, 0, 0, 0, 0, 0], [0, 0, 1, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 1, 0, 0]];
+    // mine.map = [[0, 0, 0, 0, 1, 0, 0, 0, 0],[0, 0, 0, 0, 0, 1, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 1, 0, 0], [0, 0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 1, 0, 0],[0, 1, 0, 0, 0, 0, 0, 0, 1],[0, 0, 0, 1, 0, 0, 0, 0, 0]];
+    mine.map = [[0, 0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1],[0, 0, 0, 0, 0, 0, 0, 0, 1], [1, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 1, 0, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0],[0, 1, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 1],[0, 0, 0, 0, 0, 0, 0, 0, 0]];
 
     var img = '';
     for (var i = 0; i < mine.width; i++) {
@@ -120,11 +118,12 @@ function init(difficulty) {
                 img.src = 'mine.png';
                 mine.numberMap[i][j] = 'mine';
             } else {
-                var square_number = surroundMineNum(i, j);
+                var square_number = surroundMineCount(i, j);
                 img.src = square_number + '.png';
                 mine.numberMap[i][j] = square_number;
             }
             img.id = i + '-' + j + '-back';
+            img.title = i + '-' + j;
             img.style.position = 'absolute';
             img.style.left = mine.marginLeft + mine.squareWidth * i + 'px';
             img.style.top = mine.marginTop + mine.squareHeight * j + 'px';
@@ -134,6 +133,7 @@ function init(difficulty) {
             img = document.createElement('img');
             img.src = 'square.png';
             img.id = i + '-' + j;
+            img.title = i + '-' + j;
             img.style.position = 'absolute';
             img.style.left = mine.marginLeft + mine.squareWidth * i + 'px';
             img.style.top = mine.marginTop + mine.squareHeight * j + 'px';
@@ -153,6 +153,7 @@ function init(difficulty) {
         }
 
     document.getElementById('auto').click();
+    console.clear();
 }
 
 document.getElementById('restart').onclick = init;
@@ -228,7 +229,8 @@ function leftClickAction(x, y) {
 
         if (mine.openMap[x][y] === mine.squareClose) {
             if (mine.numberMap[x][y] === 'mine') {
-                console.log('leftClickAction click mine:', x, y);
+                console.error('leftClickAction click mine:', x, y);
+                console.log(mine.map);
             }
 
             squareOpen(x, y);
@@ -281,7 +283,7 @@ function squareOpen(x, y) {
         clearInterval(timer);
         clearInterval(autoClickTimer);
         autoArea.innerText = '';
-    } else if (surroundMineNum(x, y)) {
+    } else if (surroundMineCount(x, y)) {
         // open number
         mine.openMap[x][y] = mine.squareOpen;
         mine.openNumberMap[x][y] = squareImgNum(x, y);
@@ -312,7 +314,7 @@ function setWin() {
         clearInterval(timer);
         clearInterval(autoClickTimer);
 
-        console.log('YOU WIN！');
+        console.info('YOU WIN！');
         document.getElementById('restart').click();
     }
 }
@@ -337,7 +339,7 @@ function squareImgNum(x, y) {
  *
  * @returns {number}
  */
-function squareCloseNum() {
+function squareCloseCount() {
     var count = 0;
     for (var x = 0; x < mine.width; x++) {
         for (var y = 0; y < mine.height; y++) {
@@ -375,7 +377,7 @@ function squareMaybeMineXY() {
     var maybeMineXY = [];
     for (var x = 0; x < mine.width; x++) {
         for (var y = 0; y < mine.height; y++) {
-            if (mine.openMap[x][y] === mine.squareOpen && surroundFlagNum(x, y) !== squareImgNum(x, y)) {
+            if (mine.openMap[x][y] === mine.squareOpen && surroundFlagCount(x, y) !== squareImgNum(x, y)) {
                 maybeMineXY = $.merge(maybeMineXY, surroundCloseSquareXY(x, y));
             }
         }
@@ -386,10 +388,10 @@ function squareMaybeMineXY() {
     // deep filter
     var noMineXY = [];
     $.each(maybeMineXY, function (key, val) {
-        var surroundImgNumArray = surroundSquareImgNum(val['x'], val['y']);
+        var surroundImgNumArray = surroundSquareImgXY(val['x'], val['y']);
         $.each(surroundImgNumArray, function (key2, val2) {
             var surroundCloseSquareXYArray = surroundCloseSquareXY(val2['x'], val2['y']);
-            if (remainMineCount === val2['num']) {
+            if (remainMineCount === val2['num'] && !surroundFlagCount(val2['x'], val2['y'])) {
                 var diffArray = filterDifferenceXY(maybeMineXY, surroundCloseSquareXYArray);
                 if (diffArray.length) {
                     $.each(diffArray, function (key4, val4) {
@@ -458,7 +460,7 @@ function zeroSquareOpen(x, y) {
                     mine.openMap[x + i][y + j] = mine.squareOpen;
                     mine.openNumberMap[x + i][y + j] = squareImgNum(x + i, y + j);
                     document.getElementById((x + i) + '-' + (y + j)).parentNode.removeChild(document.getElementById((x + i) + '-' + (y + j)));
-                    if (surroundMineNum(x + i, y + j) === 0) {
+                    if (surroundMineCount(x + i, y + j) === 0) {
                         zeroSquareOpen(x + i, y + j);
                     }
                 }
@@ -503,21 +505,16 @@ function autoClick() {
             while (1) {
                 left = Math.floor(Math.random() * mine.width);
                 top = Math.floor(Math.random() * mine.height);
-                if (surroundMineNum(left, top) === 0) {
+                if (surroundMineCount(left, top) === 0) {
                     break;
                 }
             }
             leftClickAction(left, top);
-        } else if (squareCloseNum() === 1 && remainMineCount === 0) {
+        } else if (squareCloseCount() === 1 && remainMineCount === 0) {
             var lastXY = squareLastXY();
             if (lastXY) {
                 leftClickAction(lastXY['x'], lastXY['y']);
             }
-        // } else if (squareNoMineXY() && squareCloseNum() > remainMineCount && remainMineCount === 1) {
-        //     var noMineXY = squareNoMineXY();
-        //     for (var i = 0; i < noMineXY.length; i++) {
-        //         leftClickAction(noMineXY[i]['x'], noMineXY[i]['y']);
-        //     }
         } else if (autoClickFlag) {
             while (1) {
                 if (autoClickX === mine.width) {
@@ -536,22 +533,19 @@ function autoClick() {
                     noFlagFlag = true;
                     return;
                 }
-                if (mine.openMap[autoClickX][autoClickY] === 0 && surroundMineNum(autoClickX, autoClickY) !== 0 && surroundMineNum(autoClickX, autoClickY) === surroundSquareNum(autoClickX, autoClickY) && surroundMineNum(autoClickX, autoClickY) !== surroundFlagNum(autoClickX, autoClickY)) {
+
+                if (mine.openMap[autoClickX][autoClickY] === 0 && surroundMineCount(autoClickX, autoClickY) !== 0 && surroundMineCount(autoClickX, autoClickY) === surroundSquareCount(autoClickX, autoClickY) && surroundMineCount(autoClickX, autoClickY) !== surroundFlagCount(autoClickX, autoClickY)) {
+                    $.each(surroundCloseSquareXY(autoClickX, autoClickY), function (key, val) {
+                        rightClickAction(val['x'], val['y']);
+                    });
+
+                    autoClickX++;
                     noFlagFlag = false;
                     break;
                 }
+
                 autoClickX++;
             }
-            for (var i = -1; i < 2; i++) {
-                for (var j = -1; j < 2; j++) {
-                    if (0 <= autoClickX + i && autoClickX + i < mine.width && 0 <= autoClickY + j && autoClickY + j < mine.height) {
-                        if (mine.openMap[autoClickX + i][autoClickY + j] === mine.squareClose) {
-                            rightClickAction(autoClickX + i, autoClickY + j);
-                        }
-                    }
-                }
-            }
-            autoClickX++;
         } else {
             while (1) {
                 if (autoClickX === mine.width) {
@@ -574,17 +568,35 @@ function autoClick() {
                         autoClickTimerFlag = true;
                         autoClickNowFlag = false;
 
-                        console.log('AI fail！');
+                        console.warn(`AI fail！remainMineCount: ${remainMineCount}`);
                         // document.getElementById('restart').click();
                     }
                     noOpenFlag = true;
                     return;
                 }
 
-                if (mine.openMap[autoClickX][autoClickY] === mine.squareOpen
-                    && surroundMineNum(autoClickX, autoClickY) !== mine.squareOpen
-                    && surroundMineNum(autoClickX, autoClickY) === surroundFlagNum(autoClickX, autoClickY)
-                    && surroundMineNum(autoClickX, autoClickY) !== surroundSquareNum(autoClickX, autoClickY)) {
+                // console.log(autoClickX, autoClickY);
+                var maybeMineXY = [];
+                $.each(squareMaybeMineXY(), function (key, val) {
+                    maybeMineXY.push(JSON.stringify(val));
+                });
+                var noMineXY = [];
+                $.each(squareNoMineXY(), function (key, val) {
+                    noMineXY.push(JSON.stringify(val));
+                });
+                var currentXY = JSON.stringify({x: autoClickX, y: autoClickY});
+                if (remainMineCount === 1 && mine.openMap[autoClickX][autoClickY] === mine.squareClose && !maybeMineXY.includes(currentXY) && noMineXY.includes(currentXY)) {
+                    squareMaybeMineXY();
+                    leftClickAction(autoClickX, autoClickY);
+
+                    autoClickX++;
+
+                    noOpenFlag = false;
+                    break;
+                } else if (mine.openMap[autoClickX][autoClickY] === mine.squareOpen
+                    && surroundMineCount(autoClickX, autoClickY) !== mine.squareOpen
+                    && surroundMineCount(autoClickX, autoClickY) === surroundFlagCount(autoClickX, autoClickY)
+                    && surroundMineCount(autoClickX, autoClickY) !== surroundSquareCount(autoClickX, autoClickY)) {
                     var xyArray = surroundCloseSquareXY(autoClickX, autoClickY);
                     for (var i = 0; i < xyArray.length; i++) {
                         leftClickAction(xyArray[i]['x'], xyArray[i]['y']);
@@ -594,15 +606,37 @@ function autoClick() {
 
                     noOpenFlag = false;
                     break;
-                }
+                } else if (autoClickX + 1 < mine.width && mine.openMap[autoClickX][autoClickY] === mine.squareOpen && mine.openMap[autoClickX + 1][autoClickY] === mine.squareOpen
+                    && filterIncludeXY(surroundCloseSquareXY(autoClickX, autoClickY), surroundCloseSquareXY(autoClickX + 1, autoClickY)).length
+                    && squareImgNum(autoClickX, autoClickY) - surroundFlagCount(autoClickX, autoClickY) === squareImgNum(autoClickX + 1, autoClickY) - surroundFlagCount(autoClickX + 1, autoClickY)
+                    // && ((surroundFlagNum(autoClickX, autoClickY) === surroundFlagNum(autoClickX + 1, autoClickY) && squareImgNum(autoClickX, autoClickY) === 1 && squareImgNum(autoClickX + 1, autoClickY) === 1 && !(squareImgNum(autoClickX, autoClickY) === surroundSquareCount(autoClickX, autoClickY)) && surroundSquareCount(autoClickX, autoClickY) != surroundSquareCount(autoClickX + 1, autoClickY) && (surroundSquareCount(autoClickX, autoClickY) + 1 === surroundSquareCount(autoClickX + 1, autoClickY) || surroundSquareCount(autoClickX, autoClickY) === surroundSquareCount(autoClickX + 1, autoClickY) + 1))
+                    //     || (squareImgNum(autoClickX, autoClickY) === 3 && squareImgNum(autoClickX + 1, autoClickY) === 2 && surroundSquareCloseCount(autoClickX, autoClickY) < surroundSquareCloseCount(autoClickX + 1, autoClickY) && surroundFlagNum(autoClickX + 1, autoClickY) === 0)
+                    //     || (surroundFlagNum(autoClickX, autoClickY) === surroundFlagNum(autoClickX + 1, autoClickY) && squareImgNum(autoClickX, autoClickY) === squareImgNum(autoClickX + 1, autoClickY) && (surroundSquareCloseCount(autoClickX, autoClickY) < surroundSquareCloseCount(autoClickX + 1, autoClickY) || surroundSquareCloseCount(autoClickX, autoClickY) > surroundSquareCloseCount(autoClickX + 1, autoClickY)))
+                    //     || (squareImgNum(autoClickX, autoClickY) - surroundFlagNum(autoClickX, autoClickY) === squareImgNum(autoClickX + 1, autoClickY) - surroundFlagNum(autoClickX + 1, autoClickY))
+                    //     // || (squareImgNum(autoClickX, autoClickY) - surroundFlagNum(autoClickX, autoClickY) + 1 === squareImgNum(autoClickX + 1, autoClickY) - surroundFlagNum(autoClickX + 1, autoClickY))
+                    // )
+                ) {
+                    var diffArray = filterDifferenceXY(surroundCloseSquareXY(autoClickX, autoClickY), surroundCloseSquareXY(autoClickX + 1, autoClickY));
+                    $.each(diffArray, function (key, val) {
+                        leftClickAction(val['x'], val['y']);
+                    });
 
-                var maybeMineXY = [];
-                $.each(squareMaybeMineXY(), function (key, val) {
-                    maybeMineXY.push(JSON.stringify(val));
-                });
-                var currentXY = JSON.stringify({x:autoClickX , y: autoClickY});
-                if (remainMineCount === 1 && mine.openMap[autoClickX][autoClickY] === mine.squareClose && !maybeMineXY.includes(currentXY)) {
-                    leftClickAction(autoClickX, autoClickY);
+                    autoClickX++;
+
+                    noOpenFlag = false;
+                    break;
+                } else if (autoClickY + 1 < mine.height && mine.openMap[autoClickX][autoClickY] === mine.squareOpen && mine.openMap[autoClickX][autoClickY + 1] === mine.squareOpen
+                    && filterIncludeXY(surroundCloseSquareXY(autoClickX, autoClickY), surroundCloseSquareXY(autoClickX, autoClickY + 1)).length
+                    && (squareImgNum(autoClickX, autoClickY) - surroundFlagCount(autoClickX, autoClickY)) === squareImgNum(autoClickX, autoClickY + 1) - surroundFlagCount(autoClickX, autoClickY + 1)
+                    // && ((surroundFlagNum(autoClickX, autoClickY) === surroundFlagNum(autoClickX, autoClickY + 1) && (squareImgNum(autoClickX, autoClickY) === 1 && squareImgNum(autoClickX, autoClickY + 1) === 1) && (((surroundSquareCount(autoClickX, autoClickY) === 2 && surroundSquareCount(autoClickX, autoClickY + 1) === 3) || (surroundSquareCount(autoClickX, autoClickY) === 3 && surroundSquareCount(autoClickX, autoClickY + 1) === 2))
+                    //         || ((surroundSquareCount(autoClickX, autoClickY) === 5 && surroundSquareCount(autoClickX, autoClickY + 1) === 2) || (surroundSquareCount(autoClickX, autoClickY) === 2 && surroundSquareCount(autoClickX, autoClickY + 1) === 5))))
+                    //     || (((squareImgNum(autoClickX, autoClickY) - surroundFlagNum(autoClickX, autoClickY)) === squareImgNum(autoClickX, autoClickY + 1) - surroundFlagNum(autoClickX, autoClickY + 1)))
+                    // )
+                ) {
+                    var diffArray = filterDifferenceXY(surroundCloseSquareXY(autoClickX, autoClickY), surroundCloseSquareXY(autoClickX, autoClickY + 1));
+                    $.each(diffArray, function (key, val) {
+                        leftClickAction(val['x'], val['y']);
+                    });
 
                     autoClickX++;
 
@@ -622,7 +656,7 @@ function autoClick() {
  * @param y
  * @returns {Array}
  */
-function surroundSquare(x, y) {
+function surroundSquareXY(x, y) {
     var xyArray = [];
     for (var i = -1; i < 2; i++) {
         for (var j = -1; j < 2; j++) {
@@ -645,7 +679,7 @@ function surroundSquare(x, y) {
  * @param y
  * @returns {number}
  */
-function surroundSquareNum(x, y) {
+function surroundSquareCount(x, y) {
     var count = 0;
     for (var i = -1; i < 2; i++) {
         for (var j = -1; j < 2; j++) {
@@ -663,9 +697,29 @@ function surroundSquareNum(x, y) {
  *
  * @param x
  * @param y
+ * @returns {number}
+ */
+function surroundSquareCloseCount(x, y) {
+    var count = 0;
+    for (var i = -1; i < 2; i++) {
+        for (var j = -1; j < 2; j++) {
+            if (0 <= x + i && x + i < mine.width && 0 <= y + j && y + j < mine.height) {
+                if (mine.openMap[x + i][y + j] === mine.squareClose) {
+                    count++;
+                }
+            }
+        }
+    }
+    return count;
+}
+
+/**
+ *
+ * @param x
+ * @param y
  * @returns {Array}
  */
-function surroundSquareImgNum(x, y) {
+function surroundSquareImgXY(x, y) {
     var xyArray = [];
     for (var i = -1; i < 2; i++) {
         for (var j = -1; j < 2; j++) {
@@ -708,7 +762,7 @@ function surroundCloseSquareXY(x, y) {
  * @param y
  * @returns {number}
  */
-function surroundFlagNum(x, y) {
+function surroundFlagCount(x, y) {
     var count = 0;
     for (var i = -1; i < 2; i++) {
         for (var j = -1; j < 2; j++) {
@@ -728,7 +782,7 @@ function surroundFlagNum(x, y) {
  * @param y
  * @returns {number}
  */
-function surroundMineNum(x, y) {
+function surroundMineCount(x, y) {
     var count = 0;
     for (var i = -1; i < 2; i++) {
         for (var j = -1; j < 2; j++) {
@@ -811,6 +865,26 @@ function filterDifferenceXY(a, b) {
     });
 
     return tempC;
+}
+
+/**
+ * a fully includes b OR b fully includes a
+ * @param a
+ * @param b
+ * @returns {Array}
+ */
+function filterIncludeXY(a, b) {
+    var intersectXY = filterIntersectXY(a, b);
+    var differenceXY = filterDifferenceXY(a, b);
+    if (!a.length || a.length === b.length || !b.length || !intersectXY.length) {
+        return [];
+    }
+
+    if (intersectXY.length != Math.min(a.length, b.length)) {
+        return [];
+    }
+
+    return differenceXY;
 }
 
 init(document.getElementById('difficulty').selectedIndex);
