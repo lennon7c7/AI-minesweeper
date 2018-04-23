@@ -102,7 +102,7 @@ function init(difficulty) {
     }
 
     // for bug review
-    // mine.map = [[0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 1, 0, 0, 0, 0, 1, 0], [1, 0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 1, 0, 1, 0], [0, 1, 0, 0, 0, 0, 0, 0, 0]];
+    // mine.map = [[0, 0, 0, 0, 0, 1, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 1, 0, 0, 1, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0, 0],[0, 0, 0, 0, 1, 0, 0, 0, 0],[0, 0, 0, 0, 0, 1, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0],[0, 0, 0, 0, 0, 0, 0, 1, 0]];
 
     var img = '';
     for (var i = 0; i < mine.width; i++) {
@@ -529,7 +529,7 @@ function autoClick() {
                     return;
                 }
 
-                console.log(autoClickX, autoClickY);
+                // console.log(autoClickX, autoClickY);
                 if (mine.openMap[autoClickX][autoClickY] === 0 && surroundMineCount(autoClickX, autoClickY) !== 0 && surroundMineCount(autoClickX, autoClickY) === surroundSquareCount(autoClickX, autoClickY) && surroundMineCount(autoClickX, autoClickY) !== surroundFlagCount(autoClickX, autoClickY)) {
                     $.each(surroundCloseSquareXY(autoClickX, autoClickY), function (key, val) {
                         rightClickAction(val['x'], val['y']);
@@ -628,7 +628,7 @@ function autoClick() {
                     return;
                 }
 
-                console.log(autoClickX, autoClickY);
+                // console.log(autoClickX, autoClickY);
                 var maybeMineXY = [];
                 $.each(squareMaybeMineXY(), function (key, val) {
                     maybeMineXY.push(JSON.stringify(val));
@@ -657,6 +657,17 @@ function autoClick() {
                     && squareImgNum(autoClickX, autoClickY) - surroundFlagCount(autoClickX, autoClickY) === squareImgNum(autoClickX + 1, autoClickY) - surroundFlagCount(autoClickX + 1, autoClickY)
                 ) {
                     $.each(filterDifferenceXY(surroundCloseSquareXY(autoClickX, autoClickY), surroundCloseSquareXY(autoClickX + 1, autoClickY)), function (key, val) {
+                        leftClickAction(val['x'], val['y']);
+                    });
+
+                    autoClickX++;
+                    noOpenFlag = false;
+                    break;
+                } else if (autoClickX + 2 < mine.width && mine.openMap[autoClickX][autoClickY] === mine.squareOpen && mine.openMap[autoClickX + 2][autoClickY] === mine.squareOpen
+                    && filterIncludeXY(surroundCloseSquareXY(autoClickX, autoClickY), surroundCloseSquareXY(autoClickX + 2, autoClickY)).length
+                    && squareImgNum(autoClickX, autoClickY) - surroundFlagCount(autoClickX, autoClickY) === squareImgNum(autoClickX + 2, autoClickY) - surroundFlagCount(autoClickX + 2, autoClickY)
+                ) {
+                    $.each(filterDifferenceXY(surroundCloseSquareXY(autoClickX, autoClickY), surroundCloseSquareXY(autoClickX + 2, autoClickY)), function (key, val) {
                         leftClickAction(val['x'], val['y']);
                     });
 
