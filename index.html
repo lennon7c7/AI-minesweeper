@@ -12,27 +12,29 @@
 <form name="form" style="position:absolute; top:20px; left:100px;">
     <select name="difficulty" id="difficulty">
         <option>easy</option>
-        <option>intermediate</option>
+        <option>easy+</option>
         <option>hard</option>
-        <option>very hard</option>
-        <option>very very hard</option>
+        <option>hard+</option>
+        <option>hard++</option>
     </select>
 </form>
-<button id="auto" style="position:absolute; top:20px; left:180px;">AI</button>
-<form name="form" style="position:absolute; top:20px; left:250px;">
-    <select name="speed" id="speed">
-        <option>very slow(0.5/秒)</option>
-        <option>slow(1/秒)</option>
-        <option>normal(2/秒)</option>
-        <option>fast(5/秒)</option>
-        <option selected>very fast(10/秒)</option>
-    </select>
-</form>
+<button id="AI" style="position:absolute; top:20px; left:180px;">AI</button>
+
+<select name="speed" id="speed" style="position:absolute; top:20px; left:250px;">
+    <option>slow</option>
+    <option>slow+</option>
+    <option>normal</option>
+    <option>fast</option>
+    <option selected>fast+</option>
+</select>
+
 <div id="score-area" style="position:absolute; top:20px; left:430px;display: none"></div>
 <div id="remain-mine-area" style="position:absolute; top:20px; left:560px;"></div>
 <div id="result-area" style="position:absolute; top:20px; left:700px;"></div>
 <div id="auto-area" style="position:absolute; top:20px; left:700px;"></div>
-<script src="jquery-1.11.3.min.js"></script>
-<script src="minesweeper.js"></script>
+<script src="js/jquery-1.11.3.min.js"></script>
+<script src="js/game.js"></script>
+<script src="js/AI.js"></script>
+<script src="js/debug.js"></script>
 </body>
 </html>
