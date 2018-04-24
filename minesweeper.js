@@ -555,7 +555,7 @@ function autoClick() {
                     noFlagFlag = false;
                     break;
                 } else if (autoClickX + 1 < mine.width && mine.openMap[autoClickX][autoClickY] === mine.squareOpen && mine.openMap[autoClickX + 1][autoClickY] === mine.squareOpen
-                    && surroundCloseSquareXY(autoClickX, autoClickY).length && surroundCloseSquareXY(autoClickX, autoClickY + 1).length
+                    && surroundCloseSquareXY(autoClickX, autoClickY).length && surroundCloseSquareXY(autoClickX + 1, autoClickY).length
                     && squareImgNum(autoClickX, autoClickY) - surroundFlagCount(autoClickX, autoClickY) > squareImgNum(autoClickX + 1, autoClickY) - surroundFlagCount(autoClickX + 1, autoClickY)
                     && squareImgNum(autoClickX, autoClickY) > surroundFlagCount(autoClickX, autoClickY) && squareImgNum(autoClickX + 1, autoClickY) > surroundFlagCount(autoClickX + 1, autoClickY)
                     && filterDifferenceXY(surroundCloseSquareXY(autoClickX, autoClickY), filterIntersectXY(surroundCloseSquareXY(autoClickX, autoClickY), surroundCloseSquareXY(autoClickX + 1, autoClickY))).length === 1
