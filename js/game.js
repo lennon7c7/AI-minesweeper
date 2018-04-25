@@ -4,7 +4,6 @@ var game = {
     mineSum: 10,
     remainMineCount: 0,
     map: [],
-    openMap: [], //0opened、1close、2flag
     flagGame: true,
     flagGameStart: true,
     startTime: 0,
@@ -52,14 +51,6 @@ game.initMine = function () {
 };
 
 game.initMap = function () {
-    // 初始化
-    for (var x = 0; x < game.width; x++) {
-        game.openMap[x] = [];
-        for (var y = 0; y < game.height; y++) {
-            game.openMap[x][y] = '?';
-        }
-    }
-
     game.initMine();
 
     var img = '';
@@ -196,51 +187,6 @@ game.win = function () {
 };
 
 /**
- * start play game
- * @param difficulty
- */
-game.start = function (difficulty) {
-    game.flagGame = true;
-    game.flagGameStart = true;
-    game.startTime = 0;
-    game.endTime = 0;
-    resultArea.innerText = '';
-    // scoreArea.innerText = 'time:' + 0;
-    autoArea.innerText = '';
-    clearInterval(autoClickTimer);
-    $(displayArea).empty();
-    autoClickTimerFlag = true;
-
-    if (difficulty === 0) {
-        game.width = 9;
-        game.height = 9;
-        game.mineSum = 10;
-    } else if (difficulty === 1) {
-        game.width = 16;
-        game.height = 16;
-        game.mineSum = 40;
-    } else if (difficulty === 2) {
-        game.width = 30;
-        game.height = 16;
-        game.mineSum = 99;
-    } else if (difficulty === 3) {
-        game.width = 48;
-        game.height = 24;
-        game.mineSum = 256;
-    } else if (difficulty === 4) {
-        game.width = 64;
-        game.height = 48;
-        game.mineSum = 777;
-    }
-    remainMineArea.innerText = 'mine quantity:' + game.mineSum;
-    game.remainMineCount = game.mineSum;
-
-    game.initMap();
-
-    game.firstClick();
-};
-
-/**
  * 左键
  * @param x
  * @param y
@@ -366,6 +312,51 @@ updateTime = function () {
         var seconds = (nowTime - game.startTime) / 1000;
         scoreArea.innerText = 'time:' + seconds;
     }
+};
+
+/**
+ * start play game
+ * @param difficulty
+ */
+game.start = function (difficulty) {
+    game.flagGame = true;
+    game.flagGameStart = true;
+    game.startTime = 0;
+    game.endTime = 0;
+    resultArea.innerText = '';
+    // scoreArea.innerText = 'time:' + 0;
+    autoArea.innerText = '';
+    clearInterval(autoClickTimer);
+    $(displayArea).empty();
+    autoClickTimerFlag = true;
+
+    if (difficulty === 0) {
+        game.width = 9;
+        game.height = 9;
+        game.mineSum = 10;
+    } else if (difficulty === 1) {
+        game.width = 16;
+        game.height = 16;
+        game.mineSum = 40;
+    } else if (difficulty === 2) {
+        game.width = 30;
+        game.height = 16;
+        game.mineSum = 99;
+    } else if (difficulty === 3) {
+        game.width = 48;
+        game.height = 24;
+        game.mineSum = 256;
+    } else if (difficulty === 4) {
+        game.width = 64;
+        game.height = 48;
+        game.mineSum = 777;
+    }
+    remainMineArea.innerText = 'mine quantity:' + game.mineSum;
+    game.remainMineCount = game.mineSum;
+
+    game.initMap();
+
+    game.firstClick();
 };
 
 document.getElementById('restart').onclick = game.start;

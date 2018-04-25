@@ -1,3 +1,62 @@
+var AI = {
+    flagClick: true,
+    flagClickNow: false,
+    flagNoFlag: true,
+    flagNoOpen: true,
+    x: 0,
+    y: 0,
+    noCount: 0,
+    YouCanNotSeeMe: true
+};
+
+document.getElementById('AI').onclick = function () {
+    if (autoClickTimerFlag) {
+        AI.start();
+        autoClickTimer = setInterval(AI.start, timerSpeed);
+        autoArea.innerText = '';
+        autoClickTimerFlag = false;
+    }
+};
+
+document.getElementById('speed').onchange = function () {
+    switch (document.getElementById('speed').selectedIndex) {
+        case 0:
+            timerSpeed = 2000;
+            break;
+        case 1:
+            timerSpeed = 1000;
+            break;
+        case 2:
+            timerSpeed = 500;
+            break;
+        case 3:
+            timerSpeed = 200;
+            break;
+        case 4:
+            timerSpeed = 100;
+            break;
+    }
+    if (AI.flagClickNow) {
+        clearInterval(autoClickTimer);
+        autoClickTimer = setInterval(AI.start, timerSpeed);
+    }
+};
+
+/**
+ * how many mine need to flag
+ * @return {number}
+ */
+AI.existMine = function () {
+    return game.mineSum - $('img[src="flag.png"]').length;
+};
+
+/**
+ * how many square need to open
+ * @return {number}
+ */
+AI.existSquare = function () {
+    return $('img[src="square.png"]').length;
+};
 
 /**
  *
@@ -5,16 +64,16 @@
  * @param y
  * @returns {string|number}
  */
-function squareImageName(x, y) {
+AI.squareImageName = function (x, y) {
     if (x > game.width || y > game.height) {
         return '';
     }
 
-    if (game.openMap[x][y] === game.squareClose) {
+    if (game.isSquare(x, y)) {
         return '?';
     }
 
-    if (game.openMap[x][y] === game.squareFlag) {
+    if (game.isFlag(x, y)) {
         return 'flag';
     }
 
@@ -24,56 +83,48 @@ function squareImageName(x, y) {
     }
 
     return num;
-}
-
-/**
- *
- * @returns {number}
- */
-function squareCloseCount() {
-    return $("img[src='square.png']").length;
-}
+};
 
 /**
  *
  * @returns {Array}
  */
-function squareCloseXY() {
-    var closeXY = [];
+AI.squareCloseXY = function () {
+    var coordinate = [];
     for (var x = 0; x < game.width; x++) {
         for (var y = 0; y < game.height; y++) {
-            if (game.openMap[x][y] === game.squareClose) {
-                closeXY.push({x: x, y: y});
+            if (game.isSquare(x, y)) {
+                coordinate.push({x: x, y: y});
             }
         }
     }
 
-    return closeXY;
-}
+    return coordinate;
+};
 
 /**
  *
  * @returns {Array}
  */
-function squareMaybeMineXY() {
+AI.squareMaybeMineXY = function () {
     var maybeMineXY = [];
     for (var x = 0; x < game.width; x++) {
         for (var y = 0; y < game.height; y++) {
-            if (game.openMap[x][y] === game.squareOpen && surroundFlagCount(x, y) !== squareImageName(x, y)) {
-                maybeMineXY = $.merge(maybeMineXY, surroundCloseXY(x, y));
+            if (game.isOpen(x, y) && AI.surroundFlagCount(x, y) !== AI.squareImageName(x, y)) {
+                maybeMineXY = $.merge(maybeMineXY, AI.surroundCloseXY(x, y));
             }
         }
     }
 
-    maybeMineXY = filterUniqueXY(maybeMineXY);
+    maybeMineXY = AI.filterUniqueXY(maybeMineXY);
 
     // deep filter
     var noMineXY = [];
     $.each(maybeMineXY, function (key, val) {
-        $.each(surroundXY(val['x'], val['y']), function (key2, val2) {
-            var surroundCloseSquareXYArray = surroundCloseXY(val2['x'], val2['y']);
-            if (game.remainMineCount === val2.imageName && !surroundFlagCount(val2['x'], val2['y'])) {
-                var diffArray = filterDifferenceXY(maybeMineXY, surroundCloseSquareXYArray);
+        $.each(AI.surroundXY(val['x'], val['y']), function (key2, val2) {
+            var surroundCloseSquareXYArray = AI.surroundCloseXY(val2['x'], val2['y']);
+            if (game.remainMineCount === val2.imageName && !AI.surroundFlagCount(val2['x'], val2['y'])) {
+                var diffArray = AI.filterDifferenceXY(maybeMineXY, surroundCloseSquareXYArray);
                 if (diffArray.length) {
                     $.each(diffArray, function (key4, val4) {
                         noMineXY.push({x: val4['x'], y: val4['y']});
@@ -83,38 +134,38 @@ function squareMaybeMineXY() {
         });
     });
 
-    noMineXY = filterUniqueXY(noMineXY);
-    maybeMineXY = filterDifferenceXY(maybeMineXY, noMineXY);
+    noMineXY = AI.filterUniqueXY(noMineXY);
+    maybeMineXY = AI.filterDifferenceXY(maybeMineXY, noMineXY);
 
     return maybeMineXY;
-}
+};
 
 /**
  *
  * @returns {Array}
  */
-function squareNoMineXY() {
-    var maybeMineXY = squareMaybeMineXY();
-    var squareXY = squareCloseXY();
+AI.squareNoMineXY = function () {
+    var maybeMineXY = AI.squareMaybeMineXY();
+    var squareXY = AI.squareCloseXY();
     var noMineXY = [];
 
     if (!maybeMineXY.length || !squareXY.length) {
         return noMineXY;
     }
 
-    return filterDifferenceXY(maybeMineXY, squareXY);
-}
+    return AI.filterDifferenceXY(maybeMineXY, squareXY);
+};
 
 /**
  *
  * @returns {{}|bool}
  */
-function squareLastXY() {
+AI.squareLastXY = function () {
     var lastXY = {};
     var count = 0;
     for (var x = 0; x < game.width; x++) {
         for (var y = 0; y < game.height; y++) {
-            if (game.openMap[x][y] === game.squareClose) {
+            if (game.isSquare(x, y)) {
                 lastXY = {x: x, y: y};
                 count++;
             }
@@ -126,234 +177,7 @@ function squareLastXY() {
     }
 
     return lastXY;
-}
-
-
-document.getElementById('AI').onclick = function () {
-    if (autoClickTimerFlag) {
-        autoClick();
-        autoClickTimer = setInterval(autoClick, timerSpeed);
-        autoArea.innerText = '';
-        autoClickTimerFlag = false;
-    }
 };
-
-var autoClickX = 0;
-var autoClickY = 0;
-var autoClickFlag = true;
-var noFlagFlag = true;
-var noOpenFlag = true;
-var noCount = 0;
-
-/**
- *
- */
-function autoClick() {
-    if (game.flagGame) {
-        autoClickNowFlag = true;
-        if (game.flagGameStart) {
-            var left = 0;
-            var top = 0;
-            while (1) {
-                left = Math.floor(Math.random() * game.width);
-                top = Math.floor(Math.random() * game.height);
-                if (surroundMineCount(left, top) === 0) {
-                    break;
-                }
-            }
-            leftClick(left, top);
-        } else if (squareCloseCount() === 1 && game.remainMineCount === 0) {
-            var lastXY = squareLastXY();
-            if (lastXY) {
-                leftClick(lastXY['x'], lastXY['y']);
-            }
-        } else if (autoClickFlag) {
-            while (1) {
-                if (autoClickX === game.width) {
-                    autoClickX = 0;
-                    autoClickY++;
-                }
-                if (autoClickY === game.height) {
-                    autoClickX = 0;
-                    autoClickY = 0;
-                    autoClickFlag = false;
-                    if (noFlagFlag) {
-                        //clearInterval(autoClickTimer);
-                        //autoClickFlag = true;
-                        noCount++;
-                    }
-                    noFlagFlag = true;
-                    return;
-                }
-
-                // console.log(autoClickX, autoClickY);
-                if (game.openMap[autoClickX][autoClickY] === 0 && surroundMineCount(autoClickX, autoClickY) !== 0 && surroundMineCount(autoClickX, autoClickY) === surroundCloseAndFlagCount(autoClickX, autoClickY) && surroundMineCount(autoClickX, autoClickY) !== surroundFlagCount(autoClickX, autoClickY)) {
-                    $.each(surroundCloseXY(autoClickX, autoClickY), function (key, val) {
-                        rightClick(val['x'], val['y']);
-                    });
-
-                    autoClickX++;
-                    noFlagFlag = false;
-                    break;
-                } else if (autoClickX + 1 < game.width && game.openMap[autoClickX][autoClickY] === game.squareOpen && game.openMap[autoClickX + 1][autoClickY] === game.squareOpen
-                    && surroundCloseXY(autoClickX, autoClickY).length && surroundCloseXY(autoClickX + 1, autoClickY).length
-                    && game.remainMineCount > filterIncludeXY(surroundCloseXY(autoClickX, autoClickY), surroundCloseXY(autoClickX + 1, autoClickY)).length
-                    && filterIncludeXY(surroundCloseXY(autoClickX, autoClickY), surroundCloseXY(autoClickX + 1, autoClickY)).length <= squareImageName(autoClickX, autoClickY) - surroundFlagCount(autoClickX, autoClickY)
-                    && filterIncludeXY(surroundCloseXY(autoClickX, autoClickY), surroundCloseXY(autoClickX + 1, autoClickY)).length <= squareImageName(autoClickX + 1, autoClickY) - surroundFlagCount(autoClickX + 1, autoClickY)
-                    && squareImageName(autoClickX, autoClickY) - surroundFlagCount(autoClickX, autoClickY) < squareImageName(autoClickX + 1, autoClickY) - surroundFlagCount(autoClickX + 1, autoClickY)
-                    && squareImageName(autoClickX , autoClickY) > surroundFlagCount(autoClickX, autoClickY) && squareImageName(autoClickX + 1, autoClickY) > surroundFlagCount(autoClickX + 1, autoClickY)
-                    && !(squareImageName(autoClickX, autoClickY) === 2 && squareImageName(autoClickX + 1, autoClickY) === 3)
-                ) {
-                    $.each(filterIncludeXY(surroundCloseXY(autoClickX, autoClickY), surroundCloseXY(autoClickX + 1, autoClickY)), function (key, val) {
-                        rightClick(val['x'], val['y']);
-                    });
-
-                    autoClickX++;
-                    noFlagFlag = false;
-                    break;
-                } else if (autoClickX + 1 < game.width && game.openMap[autoClickX][autoClickY] === game.squareOpen && game.openMap[autoClickX + 1][autoClickY] === game.squareOpen
-                    && surroundCloseXY(autoClickX, autoClickY).length && surroundCloseXY(autoClickX + 1, autoClickY).length
-                    && squareImageName(autoClickX, autoClickY) - surroundFlagCount(autoClickX, autoClickY) > squareImageName(autoClickX + 1, autoClickY) - surroundFlagCount(autoClickX + 1, autoClickY)
-                    && squareImageName(autoClickX, autoClickY) > surroundFlagCount(autoClickX, autoClickY) && squareImageName(autoClickX + 1, autoClickY) > surroundFlagCount(autoClickX + 1, autoClickY)
-                    && filterDifferenceXY(surroundCloseXY(autoClickX, autoClickY), filterIntersectXY(surroundCloseXY(autoClickX, autoClickY), surroundCloseXY(autoClickX + 1, autoClickY))).length === 1
-                ) {
-                    $.each(filterDifferenceXY(surroundCloseXY(autoClickX, autoClickY), filterIntersectXY(surroundCloseXY(autoClickX, autoClickY), surroundCloseXY(autoClickX + 1, autoClickY))), function (key, val) {
-                        rightClick(val['x'], val['y']);
-                    });
-
-                    autoClickX++;
-                    noFlagFlag = false;
-                    break;
-                } else if (autoClickY + 1 < game.height && game.openMap[autoClickX][autoClickY] === game.squareOpen && game.openMap[autoClickX][autoClickY + 1] === game.squareOpen
-                    && surroundCloseXY(autoClickX, autoClickY).length && surroundCloseXY(autoClickX, autoClickY + 1).length
-                    && game.remainMineCount > filterIncludeXY(surroundCloseXY(autoClickX, autoClickY), surroundCloseXY(autoClickX, autoClickY + 1)).length
-                    && filterIncludeXY(surroundCloseXY(autoClickX, autoClickY), surroundCloseXY(autoClickX, autoClickY + 1)).length <= squareImageName(autoClickX, autoClickY) - surroundFlagCount(autoClickX, autoClickY)
-                    && filterIncludeXY(surroundCloseXY(autoClickX, autoClickY), surroundCloseXY(autoClickX, autoClickY + 1)).length <= squareImageName(autoClickX, autoClickY + 1) - surroundFlagCount(autoClickX, autoClickY + 1)
-                    && squareImageName(autoClickX, autoClickY) - surroundFlagCount(autoClickX, autoClickY) < squareImageName(autoClickX, autoClickY + 1) - surroundFlagCount(autoClickX, autoClickY + 1)
-                    && squareImageName(autoClickX, autoClickY) > surroundFlagCount(autoClickX, autoClickY) && squareImageName(autoClickX, autoClickY + 1) > surroundFlagCount(autoClickX, autoClickY + 1)
-                ) {
-                    $.each(filterIncludeXY(surroundCloseXY(autoClickX, autoClickY), surroundCloseXY(autoClickX, autoClickY + 1)), function (key, val) {
-                        rightClick(val['x'], val['y']);
-                    });
-
-                    autoClickX++;
-                    noFlagFlag = false;
-                    break;
-                } else if (autoClickY + 1 < game.height && game.openMap[autoClickX][autoClickY] === game.squareOpen && game.openMap[autoClickX][autoClickY + 1] === game.squareOpen
-                    && surroundCloseXY(autoClickX, autoClickY).length && surroundCloseXY(autoClickX, autoClickY + 1).length
-                    && squareImageName(autoClickX, autoClickY) - surroundFlagCount(autoClickX, autoClickY) > squareImageName(autoClickX, autoClickY + 1) - surroundFlagCount(autoClickX, autoClickY + 1)
-                    && squareImageName(autoClickX, autoClickY) > surroundFlagCount(autoClickX, autoClickY) && squareImageName(autoClickX, autoClickY + 1) > surroundFlagCount(autoClickX, autoClickY + 1)
-                    && filterDifferenceXY(surroundCloseXY(autoClickX, autoClickY), filterIntersectXY(surroundCloseXY(autoClickX, autoClickY), surroundCloseXY(autoClickX, autoClickY + 1))).length === 1
-                ) {
-                    $.each(filterDifferenceXY(surroundCloseXY(autoClickX, autoClickY), filterIntersectXY(surroundCloseXY(autoClickX, autoClickY), surroundCloseXY(autoClickX, autoClickY + 1))), function (key, val) {
-                        rightClick(val['x'], val['y']);
-                    });
-
-                    autoClickX++;
-                    noFlagFlag = false;
-                    break;
-                }
-
-                autoClickX++;
-            }
-        } else {
-            while (1) {
-                if (autoClickX === game.width) {
-                    autoClickX = 0;
-                    autoClickY++;
-                }
-                if (autoClickY === game.height) {
-                    autoClickX = 0;
-                    autoClickY = 0;
-                    autoClickFlag = true;
-                    if (noOpenFlag) {
-                        //clearInterval(autoClickTimer);
-                        //autoClickFlag = true;
-                        noCount++;
-                    }
-                    if (noCount > 10) {
-                        clearInterval(autoClickTimer);
-                        noCount = 0;
-                        autoArea.innerText = 'AI fail！';
-                        autoClickTimerFlag = true;
-                        autoClickNowFlag = false;
-
-                        console.warn(`AI fail！remain mine count: ${game.remainMineCount}`);
-                        // $('#restart').click();
-                    }
-                    noOpenFlag = true;
-                    return;
-                }
-
-                // console.log(autoClickX, autoClickY);
-                var maybeMineXY = [];
-                $.each(squareMaybeMineXY(), function (key, val) {
-                    maybeMineXY.push(JSON.stringify(val));
-                });
-                var noMineXY = [];
-                $.each(squareNoMineXY(), function (key, val) {
-                    noMineXY.push(JSON.stringify(val));
-                });
-                var currentXY = JSON.stringify({x: autoClickX, y: autoClickY});
-                if (game.openMap[autoClickX][autoClickY] === game.squareOpen && surroundMineCount(autoClickX, autoClickY) !== game.squareOpen && surroundMineCount(autoClickX, autoClickY) === surroundFlagCount(autoClickX, autoClickY) && surroundMineCount(autoClickX, autoClickY) !== surroundCloseAndFlagCount(autoClickX, autoClickY)) {
-                    $.each(surroundCloseXY(autoClickX, autoClickY), function (key, val) {
-                        leftClick(val['x'], val['y']);
-                    });
-
-                    autoClickX++;
-                    noOpenFlag = false;
-                    break;
-                } else if (game.remainMineCount === 1 && game.openMap[autoClickX][autoClickY] === game.squareClose && !maybeMineXY.includes(currentXY) && noMineXY.includes(currentXY)) {
-                    leftClick(autoClickX, autoClickY);
-
-                    autoClickX++;
-                    noOpenFlag = false;
-                    break;
-                } else if (autoClickX + 1 < game.width && game.openMap[autoClickX][autoClickY] === game.squareOpen && game.openMap[autoClickX + 1][autoClickY] === game.squareOpen
-                    && filterIncludeXY(surroundCloseXY(autoClickX, autoClickY), surroundCloseXY(autoClickX + 1, autoClickY)).length
-                    && squareImageName(autoClickX, autoClickY) - surroundFlagCount(autoClickX, autoClickY) === squareImageName(autoClickX + 1, autoClickY) - surroundFlagCount(autoClickX + 1, autoClickY)
-                ) {
-                    $.each(filterDifferenceXY(surroundCloseXY(autoClickX, autoClickY), surroundCloseXY(autoClickX + 1, autoClickY)), function (key, val) {
-                        leftClick(val['x'], val['y']);
-                    });
-
-                    autoClickX++;
-                    noOpenFlag = false;
-                    break;
-                } else if (autoClickX + 2 < game.width && game.openMap[autoClickX][autoClickY] === game.squareOpen && game.openMap[autoClickX + 2][autoClickY] === game.squareOpen
-                    && filterIncludeXY(surroundCloseXY(autoClickX, autoClickY), surroundCloseXY(autoClickX + 2, autoClickY)).length
-                    && squareImageName(autoClickX, autoClickY) - surroundFlagCount(autoClickX, autoClickY) === squareImageName(autoClickX + 2, autoClickY) - surroundFlagCount(autoClickX + 2, autoClickY)
-                ) {
-                    $.each(filterDifferenceXY(surroundCloseXY(autoClickX, autoClickY), surroundCloseXY(autoClickX + 2, autoClickY)), function (key, val) {
-                        leftClick(val['x'], val['y']);
-                    });
-
-                    autoClickX++;
-                    noOpenFlag = false;
-                    break;
-                } else if (autoClickY + 1 < game.height && game.openMap[autoClickX][autoClickY] === game.squareOpen && game.openMap[autoClickX][autoClickY + 1] === game.squareOpen
-                    && filterIncludeXY(surroundCloseXY(autoClickX, autoClickY), surroundCloseXY(autoClickX, autoClickY + 1)).length
-                    && (squareImageName(autoClickX, autoClickY) - surroundFlagCount(autoClickX, autoClickY)) === squareImageName(autoClickX, autoClickY + 1) - surroundFlagCount(autoClickX, autoClickY + 1)
-                ) {
-                    $.each(filterDifferenceXY(surroundCloseXY(autoClickX, autoClickY), surroundCloseXY(autoClickX, autoClickY + 1)), function (key, val) {
-                        leftClick(val['x'], val['y']);
-                    });
-
-                    autoClickX++;
-                    noOpenFlag = false;
-                    break;
-                } else if (game.openMap[autoClickX][autoClickY] === game.squareClose                ) {
-
-                    autoClickX++;
-                    noOpenFlag = false;
-                    break;
-                }
-
-                autoClickX++;
-            }
-        }
-    }
-}
 
 /**
  *
@@ -361,7 +185,7 @@ function autoClick() {
  * @param y
  * @returns {Array}
  */
-function surroundXY(x, y) {
+AI.surroundXY = function (x, y) {
     var squareXY = [];
     for (var i = -1; i < 2; i++) {
         for (var j = -1; j < 2; j++) {
@@ -369,14 +193,14 @@ function surroundXY(x, y) {
                 squareXY.push({
                     x: x + i,
                     y: y + j,
-                    imageName: squareImageName(x + i, y + j)
+                    imageName: AI.squareImageName(x + i, y + j)
                 });
             }
         }
     }
 
     return squareXY;
-}
+};
 
 /**
  *
@@ -384,8 +208,8 @@ function surroundXY(x, y) {
  * @param y
  * @returns Array
  */
-function surroundCloseXY(x, y) {
-    var squareXY = surroundXY(x, y);
+AI.surroundCloseXY = function (x, y) {
+    var squareXY = AI.surroundXY(x, y);
     var closeXY = [];
     $.each(squareXY, function (key, val) {
         if (val.imageName === '?') {
@@ -394,7 +218,7 @@ function surroundCloseXY(x, y) {
     });
 
     return closeXY;
-}
+};
 
 /**
  *
@@ -402,8 +226,8 @@ function surroundCloseXY(x, y) {
  * @param y
  * @returns {number}
  */
-function surroundOpenCount(x, y) {
-    var squareXY = surroundXY(x, y);
+AI.surroundOpenCount = function (x, y) {
+    var squareXY = AI.surroundXY(x, y);
     var count = 0;
     $.each(squareXY, function (key, val) {
         if (val.imageName !== '?' && val.imageName !== 'flag') {
@@ -412,7 +236,7 @@ function surroundOpenCount(x, y) {
     });
 
     return count;
-}
+};
 
 /**
  *
@@ -420,8 +244,8 @@ function surroundOpenCount(x, y) {
  * @param y
  * @returns {number}
  */
-function surroundCloseCount(x, y) {
-    var squareXY = surroundXY(x, y);
+AI.surroundOpenCount = function (x, y) {
+    var squareXY = AI.surroundXY(x, y);
     var count = 0;
     $.each(squareXY, function (key, val) {
         if (val.imageName === '?') {
@@ -430,7 +254,7 @@ function surroundCloseCount(x, y) {
     });
 
     return count;
-}
+};
 
 /**
  *
@@ -438,8 +262,8 @@ function surroundCloseCount(x, y) {
  * @param y
  * @returns {number}
  */
-function surroundFlagCount(x, y) {
-    var squareXY = surroundXY(x, y);
+AI.surroundFlagCount = function (x, y) {
+    var squareXY = AI.surroundXY(x, y);
     var count = 0;
     $.each(squareXY, function (key, val) {
         if (val.imageName === 'flag') {
@@ -448,7 +272,7 @@ function surroundFlagCount(x, y) {
     });
 
     return count;
-}
+};
 
 /**
  *
@@ -456,8 +280,8 @@ function surroundFlagCount(x, y) {
  * @param y
  * @returns {number}
  */
-function surroundOpenAndFlagCount(x, y) {
-    var squareXY = surroundXY(x, y);
+AI.surroundOpenAndFlagCount = function (x, y) {
+    var squareXY = AI.surroundXY(x, y);
     var count = 0;
     $.each(squareXY, function (key, val) {
         if (val.imageName !== '?') {
@@ -466,7 +290,7 @@ function surroundOpenAndFlagCount(x, y) {
     });
 
     return count;
-}
+};
 
 /**
  *
@@ -474,8 +298,8 @@ function surroundOpenAndFlagCount(x, y) {
  * @param y
  * @returns {number}
  */
-function surroundCloseAndFlagCount(x, y) {
-    var squareXY = surroundXY(x, y);
+AI.surroundCloseAndFlagCount = function (x, y) {
+    var squareXY = AI.surroundXY(x, y);
     var count = 0;
     $.each(squareXY, function (key, val) {
         if (val.imageName === '?' || val.imageName === 'flag') {
@@ -484,14 +308,14 @@ function surroundCloseAndFlagCount(x, y) {
     });
 
     return count;
-}
+};
 
 /**
  *
  * @param oldArray
  * @returns {Array}
  */
-function filterUniqueXY(oldArray) {
+AI.filterUniqueXY = function (oldArray) {
     var tempArray = [];
     $.each(oldArray, function (key, val) {
         tempArray.push(`${val.x},${val.y}`);
@@ -505,7 +329,7 @@ function filterUniqueXY(oldArray) {
     });
 
     return newArray;
-}
+};
 
 /**
  *
@@ -513,7 +337,7 @@ function filterUniqueXY(oldArray) {
  * @param b
  * @returns {Array}
  */
-function filterIntersectXY(a, b) {
+AI.filterIntersectXY = function (a, b) {
     var tempA = [];
     $.each(a, function (key, val) {
         tempA.push(JSON.stringify(val));
@@ -531,7 +355,7 @@ function filterIntersectXY(a, b) {
     });
 
     return tempC;
-}
+};
 
 /**
  *
@@ -539,7 +363,7 @@ function filterIntersectXY(a, b) {
  * @param b
  * @returns {Array}
  */
-function filterDifferenceXY(a, b) {
+AI.filterDifferenceXY = function (a, b) {
     var tempA = [];
     $.each(a, function (key, val) {
         tempA.push(JSON.stringify(val));
@@ -557,7 +381,7 @@ function filterDifferenceXY(a, b) {
     });
 
     return tempC;
-}
+};
 
 /**
  * a fully includes b OR b fully includes a
@@ -565,9 +389,9 @@ function filterDifferenceXY(a, b) {
  * @param b
  * @returns {Array}
  */
-function filterIncludeXY(a, b) {
-    var intersectXY = filterIntersectXY(a, b);
-    var differenceXY = filterDifferenceXY(a, b);
+AI.filterIncludeXY = function (a, b) {
+    var intersectXY = AI.filterIntersectXY(a, b);
+    var differenceXY = AI.filterDifferenceXY(a, b);
     if (!a.length || a.length === b.length || !b.length || !intersectXY.length) {
         return [];
     }
@@ -577,4 +401,215 @@ function filterIncludeXY(a, b) {
     }
 
     return differenceXY;
-}
+};
+
+/**
+ *
+ */
+AI.start = function () {
+    if (!game.flagGame) {
+        return false;
+    }
+
+    AI.flagClickNow = true;
+    if (AI.existSquare() === 1 && game.remainMineCount === 0) {
+        var lastXY = AI.squareLastXY();
+        if (lastXY) {
+            game.leftClick(lastXY['x'], lastXY['y']);
+        }
+    } else if (AI.flagClick) {
+        while (1) {
+            if (AI.x === game.width) {
+                AI.x = 0;
+                AI.y++;
+            }
+            if (AI.y === game.height) {
+                AI.x = 0;
+                AI.y = 0;
+                AI.flagClick = false;
+                if (AI.flagNoFlag) {
+                    AI.noCount++;
+                }
+                AI.flagNoFlag = true;
+                return;
+            }
+
+            if (game.isOpen(AI.x, AI.y) && game.surroundMineCount(AI.x, AI.y) !== 0 && game.surroundMineCount(AI.x, AI.y) === AI.surroundCloseAndFlagCount(AI.x, AI.y) && game.surroundMineCount(AI.x, AI.y) !== AI.surroundFlagCount(AI.x, AI.y)) {
+                $.each(AI.surroundCloseXY(AI.x, AI.y), function (key, val) {
+                    game.rightClick(val['x'], val['y']);
+                });
+
+                AI.x++;
+                AI.flagNoFlag = false;
+                break;
+            } else if (AI.x + 1 < game.width && game.isOpen(AI.x, AI.y) && game.isOpen(AI.x + 1, AI.y)
+                && AI.surroundCloseXY(AI.x, AI.y).length && AI.surroundCloseXY(AI.x + 1, AI.y).length
+                && game.remainMineCount > AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 1, AI.y)).length
+                && AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 1, AI.y)).length <= AI.squareImageName(AI.x, AI.y) - AI.surroundFlagCount(AI.x, AI.y)
+                && AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 1, AI.y)).length <= AI.squareImageName(AI.x + 1, AI.y) - AI.surroundFlagCount(AI.x + 1, AI.y)
+                && AI.squareImageName(AI.x, AI.y) - AI.surroundFlagCount(AI.x, AI.y) < AI.squareImageName(AI.x + 1, AI.y) - AI.surroundFlagCount(AI.x + 1, AI.y)
+                && AI.squareImageName(AI.x, AI.y) > AI.surroundFlagCount(AI.x, AI.y) && AI.squareImageName(AI.x + 1, AI.y) > AI.surroundFlagCount(AI.x + 1, AI.y)
+                && !(AI.squareImageName(AI.x, AI.y) === 2 && AI.squareImageName(AI.x + 1, AI.y) === 3)
+            ) {
+                $.each(AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 1, AI.y)), function (key, val) {
+                    game.rightClick(val['x'], val['y']);
+                });
+
+                AI.x++;
+                AI.flagNoFlag = false;
+                break;
+            } else if (AI.x + 1 < game.width && game.isOpen(AI.x, AI.y) && game.isOpen(AI.x + 1, AI.y)
+                && AI.surroundCloseXY(AI.x, AI.y).length && AI.surroundCloseXY(AI.x + 1, AI.y).length
+                && AI.squareImageName(AI.x, AI.y) - AI.surroundFlagCount(AI.x, AI.y) > AI.squareImageName(AI.x + 1, AI.y) - AI.surroundFlagCount(AI.x + 1, AI.y)
+                && AI.squareImageName(AI.x, AI.y) > AI.surroundFlagCount(AI.x, AI.y) && AI.squareImageName(AI.x + 1, AI.y) > AI.surroundFlagCount(AI.x + 1, AI.y)
+                && AI.filterDifferenceXY(AI.surroundCloseXY(AI.x, AI.y), AI.filterIntersectXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 1, AI.y))).length === 1
+            ) {
+                $.each(AI.filterDifferenceXY(AI.surroundCloseXY(AI.x, AI.y), AI.filterIntersectXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 1, AI.y))), function (key, val) {
+                    game.rightClick(val['x'], val['y']);
+                });
+
+                AI.x++;
+                AI.flagNoFlag = false;
+                break;
+            } else if (AI.y + 1 < game.height && game.isOpen(AI.x, AI.y) && game.isOpen(AI.x, AI.y + 1)
+                && AI.surroundCloseXY(AI.x, AI.y).length && AI.surroundCloseXY(AI.x, AI.y + 1).length
+                && game.remainMineCount > AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x, AI.y + 1)).length
+                && AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x, AI.y + 1)).length <= AI.squareImageName(AI.x, AI.y) - AI.surroundFlagCount(AI.x, AI.y)
+                && AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x, AI.y + 1)).length <= AI.squareImageName(AI.x, AI.y + 1) - AI.surroundFlagCount(AI.x, AI.y + 1)
+                && AI.squareImageName(AI.x, AI.y) - AI.surroundFlagCount(AI.x, AI.y) < AI.squareImageName(AI.x, AI.y + 1) - AI.surroundFlagCount(AI.x, AI.y + 1)
+                && AI.squareImageName(AI.x, AI.y) > AI.surroundFlagCount(AI.x, AI.y) && AI.squareImageName(AI.x, AI.y + 1) > AI.surroundFlagCount(AI.x, AI.y + 1)
+            ) {
+                $.each(AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x, AI.y + 1)), function (key, val) {
+                    game.rightClick(val['x'], val['y']);
+                });
+
+                AI.x++;
+                AI.flagNoFlag = false;
+                break;
+            } else if (AI.y + 1 < game.height && game.isOpen(AI.x, AI.y) && game.isOpen(AI.x, AI.y + 1)
+                && AI.surroundCloseXY(AI.x, AI.y).length && AI.surroundCloseXY(AI.x, AI.y + 1).length
+                && AI.squareImageName(AI.x, AI.y) - AI.surroundFlagCount(AI.x, AI.y) > AI.squareImageName(AI.x, AI.y + 1) - AI.surroundFlagCount(AI.x, AI.y + 1)
+                && AI.squareImageName(AI.x, AI.y) > AI.surroundFlagCount(AI.x, AI.y) && AI.squareImageName(AI.x, AI.y + 1) > AI.surroundFlagCount(AI.x, AI.y + 1)
+                && AI.filterDifferenceXY(AI.surroundCloseXY(AI.x, AI.y), AI.filterIntersectXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x, AI.y + 1))).length === 1
+            ) {
+                $.each(AI.filterDifferenceXY(AI.surroundCloseXY(AI.x, AI.y), AI.filterIntersectXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x, AI.y + 1))), function (key, val) {
+                    game.rightClick(val['x'], val['y']);
+                });
+
+                AI.x++;
+                AI.flagNoFlag = false;
+                break;
+            }
+
+            AI.x++;
+        }
+    } else {
+        while (1) {
+            if (AI.x === game.width) {
+                AI.x = 0;
+                AI.y++;
+            }
+            if (AI.y === game.height) {
+                AI.x = 0;
+                AI.y = 0;
+                AI.flagClick = true;
+                if (AI.flagNoOpen) {
+                    AI.noCount++;
+                }
+                if (AI.noCount > 6) {
+                    clearInterval(autoClickTimer);
+                    AI.noCount = 0;
+                    autoArea.innerText = 'AI fail！';
+                    autoClickTimerFlag = true;
+                    AI.flagClickNow = false;
+
+                    console.warn(`AI fail！remain mine count: ${game.remainMineCount}`);
+                    var output = '// game.map = [';
+                    for (var x = 0; x < game.width; x++) {
+                        output += '[';
+                        for (var y = 0; y < game.height; y++) {
+                            if (game.map[x][y] === 'mine') {
+                                output += `'${game.map[x][y]}',`;
+                            } else {
+                                output += `${game.map[x][y]},`;
+                            }
+                        }
+                        output += '],';
+                    }
+                    output += '];';
+                    console.log(output);
+                }
+                AI.flagNoOpen = true;
+                return;
+            }
+
+            var maybeMineXY = [];
+            $.each(AI.squareMaybeMineXY(), function (key, val) {
+                maybeMineXY.push(JSON.stringify(val));
+            });
+            var noMineXY = [];
+            $.each(AI.squareNoMineXY(), function (key, val) {
+                noMineXY.push(JSON.stringify(val));
+            });
+            var currentXY = JSON.stringify({x: AI.x, y: AI.y});
+            if (game.isOpen(AI.x, AI.y) && game.surroundMineCount(AI.x, AI.y) !== 0 && game.surroundMineCount(AI.x, AI.y) === AI.surroundFlagCount(AI.x, AI.y) && game.surroundMineCount(AI.x, AI.y) !== AI.surroundCloseAndFlagCount(AI.x, AI.y)) {
+                $.each(AI.surroundCloseXY(AI.x, AI.y), function (key, val) {
+                    game.leftClick(val['x'], val['y']);
+                });
+
+                AI.x++;
+                AI.flagNoOpen = false;
+                break;
+            } else if (game.remainMineCount === 1 && game.isSquare(AI.x, AI.y) && !maybeMineXY.includes(currentXY) && noMineXY.includes(currentXY)) {
+                game.leftClick(AI.x, AI.y);
+
+                AI.x++;
+                AI.flagNoOpen = false;
+                break;
+            } else if (AI.x + 1 < game.width && game.isOpen(AI.x, AI.y) && game.isOpen(AI.x + 1, AI.y)
+                && AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 1, AI.y)).length
+                && AI.squareImageName(AI.x, AI.y) - AI.surroundFlagCount(AI.x, AI.y) === AI.squareImageName(AI.x + 1, AI.y) - AI.surroundFlagCount(AI.x + 1, AI.y)
+            ) {
+                $.each(AI.filterDifferenceXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 1, AI.y)), function (key, val) {
+                    game.leftClick(val['x'], val['y']);
+                });
+
+                AI.x++;
+                AI.flagNoOpen = false;
+                break;
+            } else if (AI.x + 2 < game.width && game.isOpen(AI.x, AI.y) && game.isOpen(AI.x + 2, AI.y)
+                && AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 2, AI.y)).length
+                && AI.squareImageName(AI.x, AI.y) - AI.surroundFlagCount(AI.x, AI.y) === AI.squareImageName(AI.x + 2, AI.y) - AI.surroundFlagCount(AI.x + 2, AI.y)
+            ) {
+                $.each(AI.filterDifferenceXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 2, AI.y)), function (key, val) {
+                    game.leftClick(val['x'], val['y']);
+                });
+
+                AI.x++;
+                AI.flagNoOpen = false;
+                break;
+            } else if (AI.y + 1 < game.height && game.isOpen(AI.x, AI.y) && game.isOpen(AI.x, AI.y + 1)
+                && AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x, AI.y + 1)).length
+                && (AI.squareImageName(AI.x, AI.y) - AI.surroundFlagCount(AI.x, AI.y)) === AI.squareImageName(AI.x, AI.y + 1) - AI.surroundFlagCount(AI.x, AI.y + 1)
+            ) {
+                $.each(AI.filterDifferenceXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x, AI.y + 1)), function (key, val) {
+                    game.leftClick(val['x'], val['y']);
+                });
+
+                AI.x++;
+                AI.flagNoOpen = false;
+                break;
+                // } else if (game.openMap[AI.x][AI.y] === game.squareClose && !AI.surroundOpenCount(AI.x, AI.y) && AI.squareNoMineXY().length && AI.filterIncludeXY(AI.squareNoMineXY(), [{x: AI.x, y: AI.y}]).length) {
+                //     $.each(AI.squareNoMineXY(), function (key, val) {
+                //         game.leftClick(val['x'], val['y']);
+                //     });
+                //
+                //     AI.x++;
+                //     AI.flagNoOpen = false;
+                //     break;
+            }
+
+            AI.x++;
+        }
+    }
+};
