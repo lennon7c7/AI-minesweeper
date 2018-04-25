@@ -69,11 +69,11 @@ AI.squareImageName = function (x, y) {
         return '';
     }
 
-    if (game.isSquare(x, y)) {
+    if (AI.isSquare(x, y)) {
         return '?';
     }
 
-    if (game.isFlag(x, y)) {
+    if (AI.isFlag(x, y)) {
         return 'flag';
     }
 
@@ -93,7 +93,7 @@ AI.squareCloseXY = function () {
     var coordinate = [];
     for (var x = 0; x < game.width; x++) {
         for (var y = 0; y < game.height; y++) {
-            if (game.isSquare(x, y)) {
+            if (AI.isSquare(x, y)) {
                 coordinate.push({x: x, y: y});
             }
         }
@@ -110,7 +110,7 @@ AI.squareMaybeMineXY = function () {
     var maybeMineXY = [];
     for (var x = 0; x < game.width; x++) {
         for (var y = 0; y < game.height; y++) {
-            if (game.isOpen(x, y) && AI.surroundFlagCount(x, y) !== AI.squareImageName(x, y)) {
+            if (AI.isOpen(x, y) && AI.surroundFlagCount(x, y) !== AI.squareImageName(x, y)) {
                 maybeMineXY = $.merge(maybeMineXY, AI.surroundCloseXY(x, y));
             }
         }
@@ -165,7 +165,7 @@ AI.squareLastXY = function () {
     var count = 0;
     for (var x = 0; x < game.width; x++) {
         for (var y = 0; y < game.height; y++) {
-            if (game.isSquare(x, y)) {
+            if (AI.isSquare(x, y)) {
                 lastXY = {x: x, y: y};
                 count++;
             }
@@ -312,6 +312,46 @@ AI.surroundCloseAndFlagCount = function (x, y) {
 
 /**
  *
+ * @param x
+ * @param y
+ * @returns {boolean}
+ */
+AI.isNumber = function (x, y) {
+    return $(`#${x}-${y}`).length === 0;
+};
+
+/**
+ *
+ * @param x
+ * @param y
+ * @returns {boolean}
+ */
+AI.isFlag = function (x, y) {
+    return $(`#${x}-${y}`).attr('src') === 'flag.png';
+};
+
+/**
+ *
+ * @param x
+ * @param y
+ * @returns {boolean}
+ */
+AI.isOpen = function (x, y) {
+    return $(`#${x}-${y}`).length === 0;
+};
+
+/**
+ *
+ * @param x
+ * @param y
+ * @returns {boolean}
+ */
+AI.isSquare = function (x, y) {
+    return $(`#${x}-${y}`).attr('src') === 'square.png';
+};
+
+/**
+ *
  * @param oldArray
  * @returns {Array}
  */
@@ -329,6 +369,26 @@ AI.filterUniqueXY = function (oldArray) {
     });
 
     return newArray;
+};
+
+/**
+ * a fully includes b OR b fully includes a
+ * @param a
+ * @param b
+ * @returns {Array}
+ */
+AI.filterIncludeXY = function (a, b) {
+    var intersectXY = AI.filterIntersectXY(a, b);
+    var differenceXY = AI.filterDifferenceXY(a, b);
+    if (!a.length || a.length === b.length || !b.length || !intersectXY.length) {
+        return [];
+    }
+
+    if (intersectXY.length != Math.min(a.length, b.length)) {
+        return [];
+    }
+
+    return differenceXY;
 };
 
 /**
@@ -384,26 +444,6 @@ AI.filterDifferenceXY = function (a, b) {
 };
 
 /**
- * a fully includes b OR b fully includes a
- * @param a
- * @param b
- * @returns {Array}
- */
-AI.filterIncludeXY = function (a, b) {
-    var intersectXY = AI.filterIntersectXY(a, b);
-    var differenceXY = AI.filterDifferenceXY(a, b);
-    if (!a.length || a.length === b.length || !b.length || !intersectXY.length) {
-        return [];
-    }
-
-    if (intersectXY.length != Math.min(a.length, b.length)) {
-        return [];
-    }
-
-    return differenceXY;
-};
-
-/**
  *
  */
 AI.start = function () {
@@ -434,7 +474,7 @@ AI.start = function () {
                 return;
             }
 
-            if (game.isOpen(AI.x, AI.y) && game.surroundMineCount(AI.x, AI.y) !== 0 && game.surroundMineCount(AI.x, AI.y) === AI.surroundCloseAndFlagCount(AI.x, AI.y) && game.surroundMineCount(AI.x, AI.y) !== AI.surroundFlagCount(AI.x, AI.y)) {
+            if (AI.isOpen(AI.x, AI.y) && game.surroundMineCount(AI.x, AI.y) !== 0 && game.surroundMineCount(AI.x, AI.y) === AI.surroundCloseAndFlagCount(AI.x, AI.y) && game.surroundMineCount(AI.x, AI.y) !== AI.surroundFlagCount(AI.x, AI.y)) {
                 $.each(AI.surroundCloseXY(AI.x, AI.y), function (key, val) {
                     game.rightClick(val['x'], val['y']);
                 });
@@ -442,7 +482,7 @@ AI.start = function () {
                 AI.x++;
                 AI.flagNoFlag = false;
                 break;
-            } else if (AI.x + 1 < game.width && game.isOpen(AI.x, AI.y) && game.isOpen(AI.x + 1, AI.y)
+            } else if (AI.x + 1 < game.width && AI.isOpen(AI.x, AI.y) && AI.isOpen(AI.x + 1, AI.y)
                 && AI.surroundCloseXY(AI.x, AI.y).length && AI.surroundCloseXY(AI.x + 1, AI.y).length
                 && game.remainMineCount > AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 1, AI.y)).length
                 && AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 1, AI.y)).length <= AI.squareImageName(AI.x, AI.y) - AI.surroundFlagCount(AI.x, AI.y)
@@ -458,7 +498,7 @@ AI.start = function () {
                 AI.x++;
                 AI.flagNoFlag = false;
                 break;
-            } else if (AI.x + 1 < game.width && game.isOpen(AI.x, AI.y) && game.isOpen(AI.x + 1, AI.y)
+            } else if (AI.x + 1 < game.width && AI.isOpen(AI.x, AI.y) && AI.isOpen(AI.x + 1, AI.y)
                 && AI.surroundCloseXY(AI.x, AI.y).length && AI.surroundCloseXY(AI.x + 1, AI.y).length
                 && AI.squareImageName(AI.x, AI.y) - AI.surroundFlagCount(AI.x, AI.y) > AI.squareImageName(AI.x + 1, AI.y) - AI.surroundFlagCount(AI.x + 1, AI.y)
                 && AI.squareImageName(AI.x, AI.y) > AI.surroundFlagCount(AI.x, AI.y) && AI.squareImageName(AI.x + 1, AI.y) > AI.surroundFlagCount(AI.x + 1, AI.y)
@@ -471,7 +511,7 @@ AI.start = function () {
                 AI.x++;
                 AI.flagNoFlag = false;
                 break;
-            } else if (AI.y + 1 < game.height && game.isOpen(AI.x, AI.y) && game.isOpen(AI.x, AI.y + 1)
+            } else if (AI.y + 1 < game.height && AI.isOpen(AI.x, AI.y) && AI.isOpen(AI.x, AI.y + 1)
                 && AI.surroundCloseXY(AI.x, AI.y).length && AI.surroundCloseXY(AI.x, AI.y + 1).length
                 && game.remainMineCount > AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x, AI.y + 1)).length
                 && AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x, AI.y + 1)).length <= AI.squareImageName(AI.x, AI.y) - AI.surroundFlagCount(AI.x, AI.y)
@@ -486,7 +526,7 @@ AI.start = function () {
                 AI.x++;
                 AI.flagNoFlag = false;
                 break;
-            } else if (AI.y + 1 < game.height && game.isOpen(AI.x, AI.y) && game.isOpen(AI.x, AI.y + 1)
+            } else if (AI.y + 1 < game.height && AI.isOpen(AI.x, AI.y) && AI.isOpen(AI.x, AI.y + 1)
                 && AI.surroundCloseXY(AI.x, AI.y).length && AI.surroundCloseXY(AI.x, AI.y + 1).length
                 && AI.squareImageName(AI.x, AI.y) - AI.surroundFlagCount(AI.x, AI.y) > AI.squareImageName(AI.x, AI.y + 1) - AI.surroundFlagCount(AI.x, AI.y + 1)
                 && AI.squareImageName(AI.x, AI.y) > AI.surroundFlagCount(AI.x, AI.y) && AI.squareImageName(AI.x, AI.y + 1) > AI.surroundFlagCount(AI.x, AI.y + 1)
@@ -552,7 +592,7 @@ AI.start = function () {
                 noMineXY.push(JSON.stringify(val));
             });
             var currentXY = JSON.stringify({x: AI.x, y: AI.y});
-            if (game.isOpen(AI.x, AI.y) && game.surroundMineCount(AI.x, AI.y) !== 0 && game.surroundMineCount(AI.x, AI.y) === AI.surroundFlagCount(AI.x, AI.y) && game.surroundMineCount(AI.x, AI.y) !== AI.surroundCloseAndFlagCount(AI.x, AI.y)) {
+            if (AI.isOpen(AI.x, AI.y) && game.surroundMineCount(AI.x, AI.y) !== 0 && game.surroundMineCount(AI.x, AI.y) === AI.surroundFlagCount(AI.x, AI.y) && game.surroundMineCount(AI.x, AI.y) !== AI.surroundCloseAndFlagCount(AI.x, AI.y)) {
                 $.each(AI.surroundCloseXY(AI.x, AI.y), function (key, val) {
                     game.leftClick(val['x'], val['y']);
                 });
@@ -560,13 +600,13 @@ AI.start = function () {
                 AI.x++;
                 AI.flagNoOpen = false;
                 break;
-            } else if (game.remainMineCount === 1 && game.isSquare(AI.x, AI.y) && !maybeMineXY.includes(currentXY) && noMineXY.includes(currentXY)) {
+            } else if (game.remainMineCount === 1 && AI.isSquare(AI.x, AI.y) && !maybeMineXY.includes(currentXY) && noMineXY.includes(currentXY)) {
                 game.leftClick(AI.x, AI.y);
 
                 AI.x++;
                 AI.flagNoOpen = false;
                 break;
-            } else if (AI.x + 1 < game.width && game.isOpen(AI.x, AI.y) && game.isOpen(AI.x + 1, AI.y)
+            } else if (AI.x + 1 < game.width && AI.isOpen(AI.x, AI.y) && AI.isOpen(AI.x + 1, AI.y)
                 && AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 1, AI.y)).length
                 && AI.squareImageName(AI.x, AI.y) - AI.surroundFlagCount(AI.x, AI.y) === AI.squareImageName(AI.x + 1, AI.y) - AI.surroundFlagCount(AI.x + 1, AI.y)
             ) {
@@ -577,7 +617,7 @@ AI.start = function () {
                 AI.x++;
                 AI.flagNoOpen = false;
                 break;
-            } else if (AI.x + 2 < game.width && game.isOpen(AI.x, AI.y) && game.isOpen(AI.x + 2, AI.y)
+            } else if (AI.x + 2 < game.width && AI.isOpen(AI.x, AI.y) && AI.isOpen(AI.x + 2, AI.y)
                 && AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 2, AI.y)).length
                 && AI.squareImageName(AI.x, AI.y) - AI.surroundFlagCount(AI.x, AI.y) === AI.squareImageName(AI.x + 2, AI.y) - AI.surroundFlagCount(AI.x + 2, AI.y)
             ) {
@@ -588,7 +628,7 @@ AI.start = function () {
                 AI.x++;
                 AI.flagNoOpen = false;
                 break;
-            } else if (AI.y + 1 < game.height && game.isOpen(AI.x, AI.y) && game.isOpen(AI.x, AI.y + 1)
+            } else if (AI.y + 1 < game.height && AI.isOpen(AI.x, AI.y) && AI.isOpen(AI.x, AI.y + 1)
                 && AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x, AI.y + 1)).length
                 && (AI.squareImageName(AI.x, AI.y) - AI.surroundFlagCount(AI.x, AI.y)) === AI.squareImageName(AI.x, AI.y + 1) - AI.surroundFlagCount(AI.x, AI.y + 1)
             ) {
