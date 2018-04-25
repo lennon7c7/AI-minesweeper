@@ -5,10 +5,6 @@ var game = {
     remainMineCount: 0,
     map: [],
     openMap: [], //0opened、1close、2flag
-    squareOpen: 0,
-    squareClose: 1,
-    squareMine: 1,
-    squareFlag: 2,
     flagGame: true,
     flagGameStart: true,
     startTime: 0,
@@ -28,56 +24,71 @@ var timer = null;
 var timerSpeed = document.getElementById('speed').selectedIndex;
 var autoClickTimer = null;
 var autoClickTimerFlag = true;
-var autoClickNowFlag = false;
 
-game.initMap = function () {
-    // 初始化
-    for (var i = 0; i < game.width; i++) {
-        game.map[i] = [];
-        game.openMap[i] = [];
-        for (var j = 0; j < game.height; j++) {
-            game.map[i][j] = 0;
-            game.openMap[i][j] = game.squareClose;
+game.initMine = function () {
+    for (var x = 0; x < game.width; x++) {
+        game.map[x] = [];
+        for (var y = 0; y < game.height; y++) {
+            game.map[x][y] = '?';
         }
     }
 
-    // 地雷配置
     var count = 0;
     while (count < game.mineSum) {
         var rand = Math.floor(Math.random() * game.width * game.height);
-        var top = Math.floor(rand / game.height);
-        var left = rand % game.width;
-        game.map[top][left] = 'mine';
-        count++;
+        var x = Math.floor(rand / game.height);
+        var y = rand % game.width;
+        game.map[x][y] = 'mine';
+
+        count = 0;
+        for (var i = 0; i < game.width; i++) {
+            for (var j = 0; j < game.height; j++) {
+                if (game.map[i][j] === 'mine') {
+                    count++;
+                }
+            }
+        }
+    }
+};
+
+game.initMap = function () {
+    // 初始化
+    for (var x = 0; x < game.width; x++) {
+        game.openMap[x] = [];
+        for (var y = 0; y < game.height; y++) {
+            game.openMap[x][y] = '?';
+        }
     }
 
+    game.initMine();
+
     var img = '';
-    for (var i = 0; i < game.width; i++) {
-        for (var j = 0; j < game.height; j++) {
+    for (var x = 0; x < game.width; x++) {
+        for (var y = 0; y < game.height; y++) {
             // 盤面裏的画像的表示
             img = document.createElement('img');
-            if (game.map[i][j] === 'mine') {
+            if (game.map[x][y] === 'mine') {
                 img.src = 'mine.png';
             } else {
-                var square_number = surroundMineCount(i, j);
+                var square_number = game.surroundMineCount(x, y);
                 img.src = square_number + '.png';
-                game.map[i][j] = square_number;
+                game.map[x][y] = square_number;
             }
-            img.id = i + '-' + j + '-back';
-            img.title = i + '-' + j;
+            img.id = x + '-' + y + '-back';
+            img.title = x + '-' + y;
             img.style.position = 'absolute';
-            img.style.left = game.marginLeft + game.imgWidth * i + 'px';
-            img.style.top = game.marginTop + game.imgHeight * j + 'px';
+            img.style.left = game.marginLeft + game.imgWidth * x + 'px';
+            img.style.top = game.marginTop + game.imgHeight * y + 'px';
             displayArea.appendChild(img);
 
             // 盤面的画像的表示
             img = document.createElement('img');
             img.src = 'square.png';
-            img.id = i + '-' + j;
-            img.title = i + '-' + j;
+            img.id = x + '-' + y;
+            img.title = x + '-' + y;
             img.style.position = 'absolute';
-            img.style.left = game.marginLeft + game.imgWidth * i + 'px';
-            img.style.top = game.marginTop + game.imgHeight * j + 'px';
+            img.style.left = game.marginLeft + game.imgWidth * x + 'px';
+            img.style.top = game.marginTop + game.imgHeight * y + 'px';
             displayArea.appendChild(img);
         }
     }
@@ -89,8 +100,58 @@ game.initMap = function () {
  * @param y
  * @returns {boolean}
  */
-game.clickMine = function (x, y) {
+game.isMine = function (x, y) {
     return $(`#${x}-${y}-back`).attr('src') === 'mine.png';
+};
+
+/**
+ *
+ * @param x
+ * @param y
+ * @returns {boolean}
+ */
+game.isZero = function (x, y) {
+    return $(`#${x}-${y}-back`).attr('src') === '0.png';
+};
+
+/**
+ *
+ * @param x
+ * @param y
+ * @returns {boolean}
+ */
+game.isNumber = function (x, y) {
+    return $(`#${x}-${y}-back`).attr('src') != 'mine.png' && $(`#${x}-${y}-back`).attr('src') != '0.png';
+};
+
+/**
+ *
+ * @param x
+ * @param y
+ * @returns {boolean}
+ */
+game.isFlag = function (x, y) {
+    return $(`#${x}-${y}`).attr('src') === 'flag.png';
+};
+
+/**
+ *
+ * @param x
+ * @param y
+ * @returns {boolean}
+ */
+game.isOpen = function (x, y) {
+    return $(`#${x}-${y}`).length === 0;
+};
+
+/**
+ *
+ * @param x
+ * @param y
+ * @returns {boolean}
+ */
+game.isSquare = function (x, y) {
+    return $(`#${x}-${y}`).attr('src') === 'square.png';
 };
 
 /**
@@ -130,9 +191,6 @@ game.win = function () {
     game.flagGame = false;
     clearInterval(timer);
     clearInterval(autoClickTimer);
-
-    console.info('YOU WIN！');
-    // $('#restart').click();
 
     return true;
 };
@@ -179,121 +237,61 @@ game.start = function (difficulty) {
 
     game.initMap();
 
-    // for bug review
-    // game.map = [[0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 1, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 1, 0, 0, 0, 0, 0, 0], [1, 0, 1, 0, 1, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 1, 0], [0, 1, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0]];
-
-    firstClick();
-
-    console.clear();
+    game.firstClick();
 };
-
-document.getElementById('restart').onclick = game.start;
-
-document.getElementById('difficulty').onchange = function () {
-    game.start(document.getElementById('difficulty').selectedIndex);
-};
-
-document.getElementById('speed').onchange = function () {
-    switch (document.getElementById('speed').selectedIndex) {
-        case 0:
-            timerSpeed = 2000;
-            break;
-        case 1:
-            timerSpeed = 1000;
-            break;
-        case 2:
-            timerSpeed = 500;
-            break;
-        case 3:
-            timerSpeed = 200;
-            break;
-        case 4:
-            timerSpeed = 100;
-            break;
-    }
-    if (autoClickNowFlag) {
-        clearInterval(autoClickTimer);
-        autoClickTimer = setInterval(autoClick, timerSpeed);
-    }
-};
-
-document.oncontextmenu = function () {
-    return false;
-};
-
-// 按键
-var buttonNum = 0;
-displayArea.onmousedown = function (e) {
-    var x = ( parseInt(e.target.style.left) - game.marginLeft ) / game.imgWidth;
-    var y = ( parseInt(e.target.style.top) - game.marginTop ) / game.imgHeight;
-    buttonNum = e.buttons;
-    if (buttonNum === 1 || buttonNum === 2) {
-        setTimeout(clickDecision, 100, x, y);
-    }
-};
-
-/**
- *
- * @param x
- * @param y
- */
-function clickDecision(x, y) {
-    if (buttonNum === 1) {
-        leftClick(x, y);
-    } else if (buttonNum === 2) {
-        rightClick(x, y);
-    }
-}
 
 /**
  * 左键
  * @param x
  * @param y
  */
-function leftClick(x, y) {
-    if (game.flagGame) {
-        if (game.flagGameStart) {
-            game.startTime = new Date().getTime();
-            game.flagGameStart = false;
-            // timer = setInterval(updateTime, 50);
-        }
-
-        if (game.openMap[x][y] === game.squareClose) {
-            squareOpen(x, y);
-        }
+game.leftClick = function (x, y) {
+    if (!game.flagGame) {
+        return false;
     }
-}
+
+    if (game.flagGameStart) {
+        game.startTime = new Date().getTime();
+        game.flagGameStart = false;
+        // timer = setInterval(updateTime, 50);
+    }
+
+    if (game.isSquare(x, y)) {
+        squareOpen(x, y);
+    }
+};
 
 /**
  * 右键
  * @param x
  * @param y
  */
-function rightClick(x, y) {
-    if (game.flagGame) {
-        if (game.openMap[x][y] === game.squareClose) {
-            game.openMap[x][y] = game.squareFlag;
-            document.getElementById(x + '-' + y).src = 'flag.png';
-            game.remainMineCount--;
-        } else if (game.openMap[x][y] === game.squareFlag) {
-            game.openMap[x][y] = game.squareClose;
-            document.getElementById(x + '-' + y).src = 'square.png';
-            game.remainMineCount++;
-        }
-        remainMineArea.innerText = 'mine quantity:' + game.remainMineCount;
+game.rightClick = function (x, y) {
+    if (!game.flagGame) {
+        return false;
     }
-}
+
+    if (game.isSquare(x, y)) {
+        $(`#${x}-${y}`).attr('src', 'flag.png');
+        game.remainMineCount--;
+    } else if (game.isFlag(x, y)) {
+        $(`#${x}-${y}`).attr('src', 'square.png');
+        game.remainMineCount++;
+    }
+
+    remainMineArea.innerText = 'mine quantity:' + game.remainMineCount;
+};
 
 /**
  * first click
  */
-function firstClick() {
+game.firstClick = function () {
     $.each($("img[src='0.png']"), function () {
-        var coordinate = decompose2XY(this.id);
-        leftClick(coordinate.x, coordinate.y);
+        var coordinate = game.decompose2XY(this.id);
+        game.leftClick(coordinate.x, coordinate.y);
         return false;
     });
-}
+};
 
 /**
  *
@@ -301,7 +299,7 @@ function firstClick() {
  * @param y
  * @returns {number}
  */
-function surroundMineCount(x, y) {
+game.surroundMineCount = function (x, y) {
     var count = 0;
     for (var i = -1; i < 2; i++) {
         for (var j = -1; j < 2; j++) {
@@ -312,7 +310,7 @@ function surroundMineCount(x, y) {
     }
 
     return count;
-}
+};
 
 /**
  *
@@ -320,59 +318,75 @@ function surroundMineCount(x, y) {
  * @param y
  */
 function squareOpen(x, y) {
-    if (game.clickMine(x, y)) {
+    if (game.isMine(x, y)) {
         game.lose();
-    } else if (surroundMineCount(x, y)) {
+    } else if (game.surroundMineCount(x, y)) {
         // open number
-        game.openMap[x][y] = game.squareOpen;
         document.getElementById(x + '-' + y).parentNode.removeChild(document.getElementById(x + '-' + y));
     } else {
-        squareOpenZero(x, y);
+        game.squareOpenZero(x, y);
     }
 
     game.win();
-}
+};
 
 /**
  *
  * @param x
  * @param y
  */
-function squareOpenZero(x, y) {
+game.squareOpenZero = function (x, y) {
     for (var i = -1; i < 2; i++) {
         for (var j = -1; j < 2; j++) {
-            if (0 <= x + i && x + i < game.width && 0 <= y + j && y + j < game.height) {
-                if (game.openMap[x + i][y + j] === game.squareClose) {
-                    game.openMap[x + i][y + j] = game.squareOpen;
-                    document.getElementById((x + i) + '-' + (y + j)).parentNode.removeChild(document.getElementById((x + i) + '-' + (y + j)));
-                    if (surroundMineCount(x + i, y + j) === 0) {
-                        squareOpenZero(x + i, y + j);
-                    }
+            if (0 <= x + i && x + i < game.width && 0 <= y + j && y + j < game.height && game.isSquare(x + i, y + j)) {
+                document.getElementById((x + i) + '-' + (y + j)).parentNode.removeChild(document.getElementById((x + i) + '-' + (y + j)));
+                if (game.surroundMineCount(x + i, y + j) === 0) {
+                    game.squareOpenZero(x + i, y + j);
                 }
             }
         }
     }
-}
+};
 
 /**
  * decompose string to x, y
  * @param {string} id example: 5-1-back
  * @returns {Object} example: { x:5, y:1}
  */
-function decompose2XY(id) {
+game.decompose2XY = function (id) {
     id = id.replace('-back', '');
     var coordinate = id.split('-');
 
     return {x: parseInt(coordinate[0]), y: parseInt(coordinate[1])};
-}
+};
 
-function updateTime() {
+updateTime = function () {
     if (game.flagGame && (game.flagGameStart === false)) {
         var nowTime = new Date().getTime();
         var seconds = (nowTime - game.startTime) / 1000;
         scoreArea.innerText = 'time:' + seconds;
     }
-}
+};
+
+document.getElementById('restart').onclick = game.start;
+
+document.getElementById('difficulty').onchange = function () {
+    game.start(document.getElementById('difficulty').selectedIndex);
+};
+
+document.oncontextmenu = function () {
+    return false;
+};
+
+displayArea.onmousedown = function (e) {
+    var x = ( parseInt(e.target.style.left) - game.marginLeft ) / game.imgWidth;
+    var y = ( parseInt(e.target.style.top) - game.marginTop ) / game.imgHeight;
+    if (e.buttons === 1) {
+        game.leftClick(x, y);
+    } else if (e.buttons === 2) {
+        game.rightClick(x, y);
+    }
+};
 
 $(function () {
     game.start(document.getElementById('difficulty').selectedIndex);
