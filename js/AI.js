@@ -244,7 +244,7 @@ AI.surroundOpenCount = function (x, y) {
  * @param y
  * @returns {number}
  */
-AI.surroundOpenCount = function (x, y) {
+AI.surroundCloseCount = function (x, y) {
     var squareXY = AI.surroundXY(x, y);
     var count = 0;
     $.each(squareXY, function (key, val) {
@@ -348,6 +348,30 @@ AI.isOpen = function (x, y) {
  */
 AI.isSquare = function (x, y) {
     return $(`#${x}-${y}`).attr('src') === 'square.png';
+};
+
+/**
+ * filename == surround flag quantity
+ * @param x
+ * @param y
+ * @returns {boolean}
+ */
+AI.eqFlag = function (x, y) {
+    var num = parseInt($(`#${x}-${y}-back`).attr('src').replace('.png', ''));
+    var flagCount = AI.surroundFlagCount(x, y);
+    return flagCount != 0 && num === flagCount;
+};
+
+/**
+ * filename == surround square quantity
+ * @param x
+ * @param y
+ * @returns {boolean}
+ */
+AI.eqSquare = function (x, y) {
+    var num = parseInt($(`#${x}-${y}-back`).attr('src').replace('.png', ''));
+    var flagCount = AI.surroundFlagCount(x, y);
+    return flagCount != 0 && num === flagCount;
 };
 
 /**
@@ -592,7 +616,7 @@ AI.start = function () {
                 noMineXY.push(JSON.stringify(val));
             });
             var currentXY = JSON.stringify({x: AI.x, y: AI.y});
-            if (AI.isOpen(AI.x, AI.y) && game.surroundMineCount(AI.x, AI.y) !== 0 && game.surroundMineCount(AI.x, AI.y) === AI.surroundFlagCount(AI.x, AI.y) && game.surroundMineCount(AI.x, AI.y) !== AI.surroundCloseAndFlagCount(AI.x, AI.y)) {
+            if (AI.isOpen(AI.x, AI.y) && AI.eqFlag(AI.x, AI.y) && AI.surroundCloseXY(AI.x, AI.y).length) {
                 $.each(AI.surroundCloseXY(AI.x, AI.y), function (key, val) {
                     game.leftClick(val['x'], val['y']);
                 });
