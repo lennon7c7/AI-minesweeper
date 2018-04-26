@@ -123,7 +123,7 @@ AI.squareMaybeMineXY = function () {
     $.each(maybeMineXY, function (key, val) {
         $.each(AI.surroundXY(val['x'], val['y']), function (key2, val2) {
             var surroundCloseSquareXYArray = AI.surroundCloseXY(val2['x'], val2['y']);
-            if (game.remainMineCount === val2.imageName && !AI.surroundFlagCount(val2['x'], val2['y'])) {
+            if (AI.eqMine(val2.imageName) && !AI.surroundFlagCount(val2['x'], val2['y'])) {
                 var diffArray = AI.filterDifferenceXY(maybeMineXY, surroundCloseSquareXYArray);
                 if (diffArray.length) {
                     $.each(diffArray, function (key4, val4) {
@@ -363,6 +363,15 @@ AI.eqFlag = function (x, y) {
 };
 
 /**
+ * mine quantity == giving number
+ * @param {number} quantity
+ * @returns {boolean}
+ */
+AI.eqMine = function (quantity) {
+    return AI.existMine() === Number(quantity);
+};
+
+/**
  * filename == surround square quantity
  * @param x
  * @param y
@@ -476,7 +485,7 @@ AI.start = function () {
     }
 
     AI.flagClickNow = true;
-    if (AI.existSquare() === 1 && game.remainMineCount === 0) {
+    if (AI.existSquare() === 1 && AI.eqMine(0)) {
         var lastXY = AI.squareLastXY();
         if (lastXY) {
             game.leftClick(lastXY['x'], lastXY['y']);
@@ -587,7 +596,7 @@ AI.start = function () {
                     autoClickTimerFlag = true;
                     AI.flagClickNow = false;
 
-                    console.warn(`AI fail！remain mine count: ${game.remainMineCount}`);
+                    console.warn(`AI fail！exist mine: ${AI.existMine()}`);
                     var output = '// game.map = [';
                     for (var x = 0; x < game.width; x++) {
                         output += '[';
@@ -624,7 +633,7 @@ AI.start = function () {
                 AI.x++;
                 AI.flagNoOpen = false;
                 break;
-            } else if (game.remainMineCount === 1 && AI.isSquare(AI.x, AI.y) && !maybeMineXY.includes(currentXY) && noMineXY.includes(currentXY)) {
+            } else if (AI.eqMine(1) && AI.isSquare(AI.x, AI.y) && !maybeMineXY.includes(currentXY) && noMineXY.includes(currentXY)) {
                 game.leftClick(AI.x, AI.y);
 
                 AI.x++;
