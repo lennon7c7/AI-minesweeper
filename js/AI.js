@@ -242,6 +242,24 @@ AI.surroundOpenCount = function (x, y) {
  *
  * @param x
  * @param y
+ * @returns Array
+ */
+AI.surroundOpenXY = function (x, y) {
+    var squareXY = AI.surroundXY(x, y);
+    var openXY = [];
+    $.each(squareXY, function (key, val) {
+        if (AI.isOpen(val.x, val.y)) {
+            openXY.push(val);
+        }
+    });
+
+    return openXY;
+};
+
+/**
+ *
+ * @param x
+ * @param y
  * @returns {number}
  */
 AI.surroundCloseCount = function (x, y) {
@@ -384,6 +402,37 @@ AI.eqSquare = function (x, y) {
 };
 
 /**
+ * if exist mine == 1 and exist square > 1
+ * @returns {Array}
+ */
+AI.ifMineEq1 = function () {
+    var existSquareCount = AI.existSquare();
+    if (!AI.eqMine(1) || existSquareCount < 1) {
+        return [];
+    }
+
+    var mineXY = [];
+    var coordinateCloseXY = AI.squareCloseXY();
+    $.each(coordinateCloseXY, function () {
+        $.each(AI.surroundOpenXY(this.x, this.y), function (key, val) {
+            if (AI.eqFlag(val.x, val.y)) {
+                return false;
+            } else if (mineXY.length) {
+                mineXY = AI.filterIntersectXY(mineXY, AI.surroundCloseXY(val.x, val.y));
+            } else{
+                mineXY = AI.surroundCloseXY(val.x, val.y);
+            }
+        });
+    });
+
+    if (!mineXY.length) {
+        return [];
+    }
+
+    return AI.filterUniqueXY(AI.filterDifferenceXY(mineXY, coordinateCloseXY));
+};
+
+/**
  *
  * @param oldArray
  * @returns {Array}
@@ -391,14 +440,13 @@ AI.eqSquare = function (x, y) {
 AI.filterUniqueXY = function (oldArray) {
     var tempArray = [];
     $.each(oldArray, function (key, val) {
-        tempArray.push(`${val.x},${val.y}`);
+        tempArray.push(JSON.stringify(val));
     });
 
     tempArray = $.unique(tempArray);
     var newArray = [];
     $.each(tempArray, function (key, val) {
-        val = val.split(',');
-        newArray.push({x: parseInt(val[0]), y: parseInt(val[1])});
+        newArray.push(JSON.parse(val));
     });
 
     return newArray;
@@ -490,6 +538,10 @@ AI.start = function () {
         if (lastXY) {
             game.leftClick(lastXY['x'], lastXY['y']);
         }
+    } else if (AI.ifMineEq1().length) {
+        $.each(AI.ifMineEq1(), function () {
+            game.leftClick(this.x, this.y);
+        });
     } else if (AI.flagClick) {
         while (1) {
             if (AI.x === game.width) {
@@ -595,46 +647,15 @@ AI.start = function () {
                     autoArea.innerText = 'AI fail！';
                     autoClickTimerFlag = true;
                     AI.flagClickNow = false;
-
-                    console.warn(`AI fail！exist mine: ${AI.existMine()}`);
-                    var output = '// game.map = [';
-                    for (var x = 0; x < game.width; x++) {
-                        output += '[';
-                        for (var y = 0; y < game.height; y++) {
-                            if (game.map[x][y] === 'mine') {
-                                output += `'${game.map[x][y]}',`;
-                            } else {
-                                output += `${game.map[x][y]},`;
-                            }
-                        }
-                        output += '],';
-                    }
-                    output += '];';
-                    console.log(output);
                 }
                 AI.flagNoOpen = true;
                 return;
             }
 
-            var maybeMineXY = [];
-            $.each(AI.squareMaybeMineXY(), function (key, val) {
-                maybeMineXY.push(JSON.stringify(val));
-            });
-            var noMineXY = [];
-            $.each(AI.squareNoMineXY(), function (key, val) {
-                noMineXY.push(JSON.stringify(val));
-            });
-            var currentXY = JSON.stringify({x: AI.x, y: AI.y});
             if (AI.isOpen(AI.x, AI.y) && AI.eqFlag(AI.x, AI.y) && AI.surroundCloseXY(AI.x, AI.y).length) {
                 $.each(AI.surroundCloseXY(AI.x, AI.y), function (key, val) {
                     game.leftClick(val['x'], val['y']);
                 });
-
-                AI.x++;
-                AI.flagNoOpen = false;
-                break;
-            } else if (AI.eqMine(1) && AI.isSquare(AI.x, AI.y) && !maybeMineXY.includes(currentXY) && noMineXY.includes(currentXY)) {
-                game.leftClick(AI.x, AI.y);
 
                 AI.x++;
                 AI.flagNoOpen = false;
