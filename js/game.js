@@ -6,8 +6,6 @@ var game = {
     map: [],
     flagGame: true,
     flagGameStart: true,
-    startTime: 0,
-    endTime: 0,
     imgWidth: 16,
     imgHeight: 16,
     marginLeft: 30,
@@ -16,13 +14,10 @@ var game = {
 
 var displayArea = document.getElementById('display-area');
 var resultArea = document.getElementById('result-area');
-var scoreArea = document.getElementById('score-area');
 var autoArea = document.getElementById('auto-area');
 var remainMineArea = document.getElementById('remain-mine-area');
-var timer = null;
 var timerSpeed = document.getElementById('speed').selectedIndex;
 var autoClickTimer = null;
-var autoClickTimerFlag = true;
 
 game.initMine = function () {
     for (var x = 0; x < game.width; x++) {
@@ -35,8 +30,8 @@ game.initMine = function () {
     var count = 0;
     while (count < game.mineSum) {
         var rand = Math.floor(Math.random() * game.width * game.height);
-        var x = Math.floor(rand / game.height);
-        var y = rand % game.width;
+        x = Math.floor(rand / game.height);
+        y = rand % game.width;
         game.map[x][y] = 'mine';
 
         count = 0;
@@ -154,11 +149,8 @@ game.lose = function () {
     $("img[src='square.png'], [src='flag.png']").remove();
 
     resultArea.innerText = 'GAME OVER！';
-    game.endTime = new Date().getTime();
-    // scoreArea.innerText = 'time:' + (mine.endTime - mine.startTime) / 1000;
     game.flagGameStart = true;
     game.flagGame = false;
-    clearInterval(timer);
     clearInterval(autoClickTimer);
     autoArea.innerText = '';
 
@@ -176,11 +168,8 @@ game.win = function () {
     }
 
     resultArea.innerText = 'YOU WIN！';
-    game.endTime = new Date().getTime();
-    // scoreArea.innerText = 'time:' + ( (mine.endTime - mine.startTime) / 1000 );
     game.flagGameStart = true;
     game.flagGame = false;
-    clearInterval(timer);
     clearInterval(autoClickTimer);
 
     return true;
@@ -197,9 +186,7 @@ game.leftClick = function (x, y) {
     }
 
     if (game.flagGameStart) {
-        game.startTime = new Date().getTime();
         game.flagGameStart = false;
-        // timer = setInterval(updateTime, 50);
     }
 
     if (game.isSquare(x, y)) {
@@ -306,14 +293,6 @@ game.decompose2XY = function (id) {
     return {x: parseInt(coordinate[0]), y: parseInt(coordinate[1])};
 };
 
-updateTime = function () {
-    if (game.flagGame && (game.flagGameStart === false)) {
-        var nowTime = new Date().getTime();
-        var seconds = (nowTime - game.startTime) / 1000;
-        scoreArea.innerText = 'time:' + seconds;
-    }
-};
-
 /**
  * start play game
  * @param difficulty
@@ -321,14 +300,10 @@ updateTime = function () {
 game.start = function (difficulty) {
     game.flagGame = true;
     game.flagGameStart = true;
-    game.startTime = 0;
-    game.endTime = 0;
     resultArea.innerText = '';
-    // scoreArea.innerText = 'time:' + 0;
     autoArea.innerText = '';
     clearInterval(autoClickTimer);
     $(displayArea).empty();
-    autoClickTimerFlag = true;
 
     if (difficulty === 0) {
         game.width = 9;
@@ -359,7 +334,9 @@ game.start = function (difficulty) {
     game.firstClick();
 };
 
-document.getElementById('restart').onclick = game.start;
+$('#restart').click(function(){
+    game.start();
+});
 
 document.getElementById('difficulty').onchange = function () {
     game.start(document.getElementById('difficulty').selectedIndex);

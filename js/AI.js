@@ -1,6 +1,7 @@
 var AI = {
     flagClick: true,
     flagClickNow: false,
+    flagClickTimer: true,
     flagNoFlag: true,
     flagNoOpen: true,
     x: 0,
@@ -9,14 +10,18 @@ var AI = {
     YouCanNotSeeMe: true
 };
 
-document.getElementById('AI').onclick = function () {
-    if (autoClickTimerFlag) {
-        AI.start();
-        autoClickTimer = setInterval(AI.start, timerSpeed);
-        autoArea.innerText = '';
-        autoClickTimerFlag = false;
+$('#AI').click(function(){
+    if (!AI.flagClickTimer) {
+        return false;
     }
-};
+
+    AI.start();
+    autoClickTimer = setInterval(AI.start, timerSpeed);
+    autoArea.innerText = '';
+    AI.flagClickTimer = false;
+    return true;
+});
+
 
 document.getElementById('speed').onchange = function () {
     switch (document.getElementById('speed').selectedIndex) {
@@ -645,7 +650,7 @@ AI.start = function () {
                     clearInterval(autoClickTimer);
                     AI.noCount = 0;
                     autoArea.innerText = 'AI fail！';
-                    autoClickTimerFlag = true;
+                    AI.flagClickTimer = true;
                     AI.flagClickNow = false;
                 }
                 AI.flagNoOpen = true;
