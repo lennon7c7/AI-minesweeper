@@ -576,7 +576,7 @@ AI.leftClick2 = function (x, y) {
     var map = AI.map();
     var noMineXY = [];
 
-    if (!(AI.y + 1 < game.height) || !AI.isOpen2(x, y, x, y + 1) || !AI.gtNumber2(x, y, x, y + 1) || map[x][y].closeCount != 4) {
+    if (!(AI.y + 1 < game.height) || !AI.isOpen2(x, y, x, y + 1) || !AI.gtNumber2(x, y, x, y + 1) || map[x][y].closeCount !== map[x][y + 1].closeCount || AI.eqFlag(x, y) || AI.eqFlag(x, y + 1) || AI.eqSquare(x, y) || AI.eqSquare(x, y + 1)) {
         return noMineXY;
     }
 
@@ -589,6 +589,7 @@ AI.leftClick2 = function (x, y) {
 };
 
 /**
+ * use 3 coordinate to compare
  * @param {number} x
  * @param {number} y
  * @returns {Array}
@@ -604,7 +605,7 @@ AI.leftClick3 = function (x, y) {
     }
 
     $.each(openXY, function () {
-        if (!AI.filterIncludeXY(closeXY, map[this.x][this.y].closeXY) || !map[x][y].imageName || map[x][y].imageName <= this.imageName || !map[this.x][this.y].closeXY.length) {
+        if (!map[x][y].imageName || map[x][y].imageName != this.imageName + 1 || !map[this.x][this.y].closeXY.length || !AI.filterIncludeXY(closeXY, map[this.x][this.y].closeXY)) {
             return false;
         }
 
