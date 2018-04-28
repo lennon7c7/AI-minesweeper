@@ -144,34 +144,25 @@ AI.squareCloseXY = function () {
  */
 AI.squareMaybeMineXY = function () {
     var maybeMineXY = [];
-    for (var x = 0; x < game.width; x++) {
-        for (var y = 0; y < game.height; y++) {
-            if (AI.isOpen(x, y) && AI.surroundFlagCount(x, y) !== AI.squareImageName(x, y)) {
-                maybeMineXY = $.merge(maybeMineXY, AI.surroundCloseXY(x, y));
-            }
-        }
-    }
-
-    maybeMineXY = AI.filterUniqueXY(maybeMineXY);
-
-    // deep filter
     var noMineXY = [];
-    $.each(maybeMineXY, function (key, val) {
-        $.each(AI.surroundXY(val['x'], val['y']), function (key2, val2) {
-            var surroundCloseSquareXYArray = AI.surroundCloseXY(val2['x'], val2['y']);
-            if (AI.eqMine(val2.imageName) && !AI.surroundFlagCount(val2['x'], val2['y'])) {
-                var diffArray = AI.filterDifferenceXY(maybeMineXY, surroundCloseSquareXYArray);
-                if (diffArray.length) {
-                    $.each(diffArray, function (key4, val4) {
-                        noMineXY.push({x: val4['x'], y: val4['y']});
-                    });
-                }
+    var closeXY = AI.squareCloseXY();
+    $.each(closeXY, function (key, val) {
+        var openXY = AI.surroundOpenXY(val.x, val.y);
+        for (var i = 0, len = openXY.length; i < len; i++) {
+            if (AI.eqFlag(openXY[i].x, openXY[i].y)) {
+                noMineXY.push({x: val.x, y: val.y});
+                continue;
             }
-        });
+
+            maybeMineXY.push({x: val.x, y: val.y});
+        }
     });
 
     noMineXY = AI.filterUniqueXY(noMineXY);
-    maybeMineXY = AI.filterDifferenceXY(maybeMineXY, noMineXY);
+    maybeMineXY = AI.filterUniqueXY(maybeMineXY);
+    if (noMineXY.length) {
+        maybeMineXY = AI.filterDifferenceXY(closeXY, noMineXY);
+    }
 
     return maybeMineXY;
 };
@@ -180,16 +171,22 @@ AI.squareMaybeMineXY = function () {
  *
  * @returns {Array}
  */
-AI.squareNoMineXY = function () {
-    var maybeMineXY = AI.squareMaybeMineXY();
-    var squareXY = AI.squareCloseXY();
+AI.squareNoneMineXY = function () {
     var noMineXY = [];
+    $.each(AI.squareCloseXY(), function (key, val) {
+        var openXY = AI.surroundOpenXY(val.x, val.y);
+        for (var i = 0, len = openXY.length; i < len; i++) {
+            if (!AI.eqFlag(openXY[i].x, openXY[i].y)) {
+                continue;
+            }
 
-    if (!maybeMineXY.length || !squareXY.length) {
-        return noMineXY;
-    }
+            noMineXY.push({x: val.x, y: val.y});
+        }
+    });
 
-    return AI.filterDifferenceXY(maybeMineXY, squareXY);
+    noMineXY = AI.filterUniqueXY(noMineXY);
+
+    return noMineXY;
 };
 
 /**
@@ -417,6 +414,16 @@ AI.isSquare = function (x, y) {
 };
 
 /**
+ *
+ * @param x
+ * @param y
+ * @returns {boolean}
+ */
+AI.isSurroundNoneMine = function (x, y) {
+    return AI.squareImageName(x, y) === 0 || (AI.isOpen(x, y) && AI.eqFlag(x, y));
+};
+
+/**
  * filename == surround flag quantity
  * @param x
  * @param y
@@ -435,6 +442,17 @@ AI.eqFlag = function (x, y) {
  */
 AI.eqMine = function (quantity) {
     return AI.existMine() === Number(quantity);
+};
+
+/**
+ * if image name == new number
+ * @param {number} x
+ * @param {number} y
+ * @param {number} newNumber
+ * @returns {boolean}
+ */
+AI.eqNumber = function (x, y, newNumber) {
+    return AI.squareImageName(x, y) - AI.surroundFlagCount(x, y) === newNumber;
 };
 
 /**
@@ -514,6 +532,39 @@ AI.ifMineEq1 = function () {
     }
 
     return AI.filterUniqueXY(AI.filterDifferenceXY(mineXY, coordinateCloseXY));
+};
+
+/**
+ * if exist mine == 2 and exist square > 2
+ * @returns {Array}
+ */
+AI.ifMineEq2 = function () {
+    var noMineXY = [];
+    var allCloseXY = AI.squareCloseXY();
+    if (!AI.eqMine(2) || allCloseXY.length < 2 || allCloseXY.length > 11) {
+        return noMineXY;
+    }
+
+    var maybeMineXY = AI.squareMaybeMineXY();
+    noMineXY = AI.squareNoneMineXY();
+
+    var eqNumberFlag = false;
+    var eqNumberXY = [];
+    $.each(maybeMineXY, function () {
+        $.each(AI.surroundOpenXY(this.x, this.y), function (key, val) {
+            if (AI.eqNumber(val.x, val.y, 2)) {
+                eqNumberFlag = true;
+                eqNumberXY = AI.surroundCloseXY(val.x, val.y);
+                return false;
+            }
+        });
+    });
+
+    if (eqNumberFlag) {
+        noMineXY = AI.filterUniqueXY(AI.filterDifferenceXY(allCloseXY, eqNumberXY));
+    }
+
+    return noMineXY;
 };
 
 /**
@@ -677,6 +728,10 @@ AI.start = function () {
         }
     } else if (AI.ifMineEq1().length) {
         $.each(AI.ifMineEq1(), function () {
+            game.leftClick(this.x, this.y);
+        });
+    } else if (AI.ifMineEq2().length) {
+        $.each(AI.ifMineEq2(), function () {
             game.leftClick(this.x, this.y);
         });
     } else if (AI.flagClick) {
