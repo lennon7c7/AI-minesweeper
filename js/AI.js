@@ -480,9 +480,9 @@ AI.ltNumber2 = function (x1, y1, x2, y2) {
  * @returns {boolean}
  */
 AI.eqSquare = function (x, y) {
-    var num = parseInt($(`#${x}-${y}-back`).attr('src').replace('.png', ''));
     var flagCount = AI.surroundFlagCount(x, y);
-    return flagCount != 0 && num === flagCount;
+    var num = parseInt($(`#${x}-${y}-back`).attr('src').replace('.png', ''));
+    return num - flagCount === AI.surroundCloseCount(x, y);
 };
 
 /**
@@ -548,7 +548,7 @@ AI.leftClick3 = function (x, y) {
     var closeXY = map[x][y].closeXY;
     var noMineXY = [];
 
-    if (!AI.isOpen(x, y) || openXY.length != 2 || !AI.eqFlag(x, y)) {
+    if (!AI.isOpen(x, y) || openXY.length != 2 || AI.eqSquare(x, y) || AI.eqFlag(x, y)) {
         return noMineXY;
     }
 
