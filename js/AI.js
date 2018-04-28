@@ -576,13 +576,16 @@ AI.leftClick2 = function (x, y) {
     var map = AI.map();
     var noMineXY = [];
 
-    if (!(AI.y + 1 < game.height) || !AI.isOpen2(x, y, x, y + 1) || !AI.gtNumber2(x, y, x, y + 1) || map[x][y].closeCount !== map[x][y + 1].closeCount || AI.eqFlag(x, y) || AI.eqFlag(x, y + 1) || AI.eqSquare(x, y) || AI.eqSquare(x, y + 1)) {
+    if (!(AI.y + 1 < game.height) || !AI.isOpen2(x, y, x, y + 1) || !AI.gtNumber2(x, y, x, y + 1) || AI.eqFlag(x, y) || AI.eqFlag(x, y + 1) || AI.eqSquare(x, y) || AI.eqSquare(x, y + 1)) {
         return noMineXY;
     }
 
-    noMineXY = AI.filterDifferenceXY(map[x][y + 1].closeXY, AI.filterIntersectXY(map[x][y].closeXY, map[x][y + 1].closeXY));
-    if (noMineXY.length != 1) {
-        return [];
+    if (map[x][y].closeCount === map[x][y + 1].closeCount
+        || (map[x][y].closeCount === 4)) {
+        noMineXY = AI.filterDifferenceXY(map[x][y + 1].closeXY, AI.filterIntersectXY(map[x][y].closeXY, map[x][y + 1].closeXY));
+        if (noMineXY.length != 1) {
+            return [];
+        }
     }
 
     return noMineXY;
