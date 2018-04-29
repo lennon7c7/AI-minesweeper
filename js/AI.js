@@ -8,7 +8,7 @@ var AI = {
     noCount: 0,
     step: [],
     timer: 0,
-    timerSpeed: document.getElementById('speed').selectedIndex,
+    timerSpeed: $('#speed').val(),
     YouCanNotSeeMe: true
 };
 
@@ -22,30 +22,15 @@ $('#AI').click(function () {
     }
 });
 
-document.getElementById('speed').onchange = function () {
-    switch (document.getElementById('speed').selectedIndex) {
-        case 0:
-            AI.timerSpeed = 2000;
-            break;
-        case 1:
-            AI.timerSpeed = 1000;
-            break;
-        case 2:
-            AI.timerSpeed = 500;
-            break;
-        case 3:
-            AI.timerSpeed = 200;
-            break;
-        case 4:
-            AI.timerSpeed = 100;
-            break;
-    }
+$('#speed').change(function () {
+    AI.timerSpeed = $(this).val();
 
     if (AI.flagClickNow) {
         clearInterval(AI.timer);
         AI.timer = setInterval(AI.start, AI.timerSpeed);
     }
-};
+});
+
 
 /**
  *
@@ -576,6 +561,8 @@ AI.leftClick = function (x, y) {
     AI.step.push({action: 'left', x: x, y: y});
 
     game.leftClick(x, y);
+
+    AI.win();
 };
 
 /**
@@ -592,7 +579,7 @@ AI.leftClick2 = function (x, y) {
     }
 
     if (map[x][y].closeCount === map[x][y + 1].closeCount
-        || (map[x][y].closeCount === 4)) {
+        || (map[x][y].closeCount === 4 && map[x][y + 1].closeCount === 3)) {
         noMineXY = AI.filterDifferenceXY(map[x][y + 1].closeXY, AI.filterIntersectXY(map[x][y].closeXY, map[x][y + 1].closeXY));
         if (noMineXY.length != 1) {
             return [];
@@ -948,5 +935,13 @@ AI.lose = function () {
 };
 
 AI.win = function () {
+    if (!(game.mineSum > AI.existSquare() && AI.existSquare() === AI.existMine())) {
+        return false;
+    }
+
     $('#AI').click();
+    localStorage.removeItem('AI.step');
+    AI.step = [];
+
+    return true;
 };
