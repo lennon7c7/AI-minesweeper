@@ -1,49 +1,49 @@
 var AI = {
     flagClick: true,
     flagClickNow: false,
-    flagClickTimer: true,
     flagNoFlag: true,
     flagNoOpen: true,
     x: 0,
     y: 0,
     noCount: 0,
+    step: [],
+    timer: 0,
+    timerSpeed: document.getElementById('speed').selectedIndex,
     YouCanNotSeeMe: true
 };
 
-$('#AI').click(function(){
-    if (!AI.flagClickTimer) {
-        return false;
+$('#AI').click(function () {
+    if ($(this).prop('checked')) {
+        AI.start();
+        AI.timer = setInterval(AI.start, AI.timerSpeed);
+        autoArea.innerText = '';
+    } else {
+        clearInterval(AI.timer);
     }
-
-    AI.start();
-    autoClickTimer = setInterval(AI.start, timerSpeed);
-    autoArea.innerText = '';
-    AI.flagClickTimer = false;
-    return true;
 });
-
 
 document.getElementById('speed').onchange = function () {
     switch (document.getElementById('speed').selectedIndex) {
         case 0:
-            timerSpeed = 2000;
+            AI.timerSpeed = 2000;
             break;
         case 1:
-            timerSpeed = 1000;
+            AI.timerSpeed = 1000;
             break;
         case 2:
-            timerSpeed = 500;
+            AI.timerSpeed = 500;
             break;
         case 3:
-            timerSpeed = 200;
+            AI.timerSpeed = 200;
             break;
         case 4:
-            timerSpeed = 100;
+            AI.timerSpeed = 100;
             break;
     }
+
     if (AI.flagClickNow) {
-        clearInterval(autoClickTimer);
-        autoClickTimer = setInterval(AI.start, timerSpeed);
+        clearInterval(AI.timer);
+        AI.timer = setInterval(AI.start, AI.timerSpeed);
     }
 };
 
@@ -572,6 +572,17 @@ AI.ifMineEq2 = function () {
  * @param {number} y
  * @returns {Array}
  */
+AI.leftClick = function (x, y) {
+    AI.step.push({action: 'left', x: x, y: y});
+
+    game.leftClick(x, y);
+};
+
+/**
+ * @param {number} x
+ * @param {number} y
+ * @returns {Array}
+ */
 AI.leftClick2 = function (x, y) {
     var map = AI.map();
     var noMineXY = [];
@@ -622,6 +633,17 @@ AI.leftClick3 = function (x, y) {
     noMineXY = closeXY;
 
     return noMineXY;
+};
+
+/**
+ * @param {number} x
+ * @param {number} y
+ * @returns {Array}
+ */
+AI.rightClick = function (x, y) {
+    AI.step.push({action: 'right', x: x, y: y});
+
+    game.rightClick(x, y);
 };
 
 /**
@@ -728,15 +750,15 @@ AI.start = function () {
     if (AI.existSquare() === 1 && AI.eqMine(0)) {
         var lastXY = AI.squareLastXY();
         if (lastXY) {
-            game.leftClick(lastXY['x'], lastXY['y']);
+            AI.leftClick(lastXY['x'], lastXY['y']);
         }
     } else if (AI.ifMineEq1().length) {
         $.each(AI.ifMineEq1(), function () {
-            game.leftClick(this.x, this.y);
+            AI.leftClick(this.x, this.y);
         });
     } else if (AI.ifMineEq2().length) {
         $.each(AI.ifMineEq2(), function () {
-            game.leftClick(this.x, this.y);
+            AI.leftClick(this.x, this.y);
         });
     } else if (AI.flagClick) {
         while (1) {
@@ -757,7 +779,7 @@ AI.start = function () {
 
             if (AI.isOpen(AI.x, AI.y) && game.surroundMineCount(AI.x, AI.y) !== 0 && game.surroundMineCount(AI.x, AI.y) === AI.surroundCloseAndFlagCount(AI.x, AI.y) && game.surroundMineCount(AI.x, AI.y) !== AI.surroundFlagCount(AI.x, AI.y)) {
                 $.each(AI.surroundCloseXY(AI.x, AI.y), function (key, val) {
-                    game.rightClick(val['x'], val['y']);
+                    AI.rightClick(val['x'], val['y']);
                 });
 
                 AI.x++;
@@ -773,7 +795,7 @@ AI.start = function () {
                 && !(AI.squareImageName(AI.x, AI.y) === 2 && AI.squareImageName(AI.x + 1, AI.y) === 3)
             ) {
                 $.each(AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 1, AI.y)), function (key, val) {
-                    game.rightClick(val['x'], val['y']);
+                    AI.rightClick(val['x'], val['y']);
                 });
 
                 AI.x++;
@@ -786,7 +808,7 @@ AI.start = function () {
                 && AI.filterDifferenceXY(AI.surroundCloseXY(AI.x, AI.y), AI.filterIntersectXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 1, AI.y))).length === 1
             ) {
                 $.each(AI.filterDifferenceXY(AI.surroundCloseXY(AI.x, AI.y), AI.filterIntersectXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 1, AI.y))), function (key, val) {
-                    game.rightClick(val['x'], val['y']);
+                    AI.rightClick(val['x'], val['y']);
                 });
 
                 AI.x++;
@@ -801,7 +823,7 @@ AI.start = function () {
                 && AI.squareImageName(AI.x, AI.y) > AI.surroundFlagCount(AI.x, AI.y) && AI.squareImageName(AI.x, AI.y + 1) > AI.surroundFlagCount(AI.x, AI.y + 1)
             ) {
                 $.each(AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x, AI.y + 1)), function (key, val) {
-                    game.rightClick(val['x'], val['y']);
+                    AI.rightClick(val['x'], val['y']);
                 });
 
                 AI.x++;
@@ -813,7 +835,7 @@ AI.start = function () {
                 && AI.filterDifferenceXY(AI.surroundCloseXY(AI.x, AI.y), AI.filterIntersectXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x, AI.y + 1))).length === 1
             ) {
                 $.each(AI.filterDifferenceXY(AI.surroundCloseXY(AI.x, AI.y), AI.filterIntersectXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x, AI.y + 1))), function (key, val) {
-                    game.rightClick(val['x'], val['y']);
+                    AI.rightClick(val['x'], val['y']);
                 });
 
                 AI.x++;
@@ -837,11 +859,7 @@ AI.start = function () {
                     AI.noCount++;
                 }
                 if (AI.noCount > 6) {
-                    clearInterval(autoClickTimer);
-                    AI.noCount = 0;
-                    autoArea.innerText = 'AI fail！';
-                    AI.flagClickTimer = true;
-                    AI.flagClickNow = false;
+                    AI.lose();
                 }
                 AI.flagNoOpen = true;
                 return;
@@ -849,7 +867,7 @@ AI.start = function () {
 
             if (AI.isOpen(AI.x, AI.y) && AI.eqFlag(AI.x, AI.y) && AI.surroundCloseXY(AI.x, AI.y).length) {
                 $.each(AI.surroundCloseXY(AI.x, AI.y), function (key, val) {
-                    game.leftClick(val.x, val.y);
+                    AI.leftClick(val.x, val.y);
                 });
 
                 AI.x++;
@@ -859,7 +877,7 @@ AI.start = function () {
                 && AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 1, AI.y)).length
             ) {
                 $.each(AI.filterDifferenceXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 1, AI.y)), function (key, val) {
-                    game.leftClick(val.x, val.y);
+                    AI.leftClick(val.x, val.y);
                 });
 
                 AI.x++;
@@ -869,7 +887,7 @@ AI.start = function () {
                 && AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 2, AI.y)).length
             ) {
                 $.each(AI.filterDifferenceXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x + 2, AI.y)), function (key, val) {
-                    game.leftClick(val.x, val.y);
+                    AI.leftClick(val.x, val.y);
                 });
 
                 AI.x++;
@@ -879,7 +897,7 @@ AI.start = function () {
                 && AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x, AI.y + 1)).length
             ) {
                 $.each(AI.filterDifferenceXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x, AI.y + 1)), function (key, val) {
-                    game.leftClick(val.x, val.y);
+                    AI.leftClick(val.x, val.y);
                 });
 
                 AI.x++;
@@ -889,7 +907,7 @@ AI.start = function () {
                 && AI.filterIncludeXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x, AI.y + 2)).length
             ) {
                 $.each(AI.filterDifferenceXY(AI.surroundCloseXY(AI.x, AI.y), AI.surroundCloseXY(AI.x, AI.y + 2)), function (key, val) {
-                    game.leftClick(val.x, val.y);
+                    AI.leftClick(val.x, val.y);
                 });
 
                 AI.x++;
@@ -897,7 +915,7 @@ AI.start = function () {
                 break;
             } else if (AI.leftClick2(AI.x, AI.y).length) {
                 $.each(AI.leftClick2(AI.x, AI.y), function (key, val) {
-                    game.leftClick(val.x, val.y);
+                    AI.leftClick(val.x, val.y);
                 });
 
                 AI.x++;
@@ -905,7 +923,7 @@ AI.start = function () {
                 break;
             } else if (AI.leftClick3(AI.x, AI.y).length) {
                 $.each(AI.leftClick3(AI.x, AI.y), function (key, val) {
-                    game.leftClick(val.x, val.y);
+                    AI.leftClick(val.x, val.y);
                 });
 
                 AI.x++;
@@ -916,4 +934,19 @@ AI.start = function () {
             AI.x++;
         }
     }
+};
+
+AI.lose = function () {
+    $('#AI').click();
+
+    AI.noCount = 0;
+    autoArea.innerText = 'AI lose！';
+    AI.flagClickNow = false;
+
+    localStorage.setItem('AI.step', JSON.stringify(AI.step));
+    AI.step = [];
+};
+
+AI.win = function () {
+    $('#AI').click();
 };

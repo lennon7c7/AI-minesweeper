@@ -16,8 +16,6 @@ var displayArea = document.getElementById('display-area');
 var resultArea = document.getElementById('result-area');
 var autoArea = document.getElementById('auto-area');
 var remainMineArea = document.getElementById('remain-mine-area');
-var timerSpeed = document.getElementById('speed').selectedIndex;
-var autoClickTimer = null;
 
 game.initMine = function () {
     for (var x = 0; x < game.width; x++) {
@@ -151,7 +149,6 @@ game.lose = function () {
     resultArea.innerText = 'GAME OVER！';
     game.flagGameStart = true;
     game.flagGame = false;
-    clearInterval(autoClickTimer);
     autoArea.innerText = '';
 
     return true;
@@ -170,7 +167,6 @@ game.win = function () {
     resultArea.innerText = 'YOU WIN！';
     game.flagGameStart = true;
     game.flagGame = false;
-    clearInterval(autoClickTimer);
 
     return true;
 };
@@ -302,7 +298,6 @@ game.start = function (difficulty) {
     game.flagGameStart = true;
     resultArea.innerText = '';
     autoArea.innerText = '';
-    clearInterval(autoClickTimer);
     $(displayArea).empty();
 
     if (difficulty === 0) {
